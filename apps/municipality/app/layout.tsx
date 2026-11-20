@@ -4,8 +4,10 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { DemoProvider } from '../components/state';
 
+import { brand } from '../domain/data';
+
 export const metadata: Metadata = {
-  title: 'همساده | شهرداری مشارکتی',
+  title: brand.name + ' | شهرداری مشارکتی',
   description: 'سامانهٔ مشارکت شهروندی برای شهری که با هم می‌سازیم.',
 };
 

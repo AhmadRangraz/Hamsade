@@ -7,13 +7,7 @@ import {
   parseJalali,
   tehranInstant,
 } from './calendar';
-import {
-  balance,
-  execute,
-  monthWithdrawals,
-  totalScore,
-  type Command,
-} from './commands';
+import { balance, execute, totalScore, type Command } from './commands';
 import { seed, users } from './data';
 import type { Role, State } from './types';
 
@@ -220,7 +214,7 @@ describe('Jalali dates and Cara transactions', () => {
     const next = perform(state, 'citizen', command).state;
     expect(next.orders[0]).toMatchObject({
       cara: 20,
-      toman: 145000,
+      toman: 1065000,
       rate: 1000,
     });
     expect(next.products.find((p) => p.id === 'parking')?.stock).toBe(11);
@@ -236,28 +230,17 @@ describe('Jalali dates and Cara transactions', () => {
       state,
     );
   });
-  it('enforces the per-Jalali-month withdrawal cap and flags repeat requests', () => {
-    const start = '2025-03-20T20:29:59Z';
-    const next = '2025-03-20T20:30:00Z';
-    const command: Command = {
+  it('rejects legacy citizen withdrawal requests without affecting the wallet', () => {
+    const state = seed();
+    const command = {
       type: 'withdraw',
       id: 'withdraw-one',
       amount: 150,
-    };
-    const state = perform(seed(), 'citizen', command, start).state;
-    expect(monthWithdrawals(state, 'citizen', start)).toBe(150);
-    expect(monthWithdrawals(state, 'citizen', next)).toBe(0);
-    expect(
-      perform(state, 'citizen', { ...command, id: 'two', amount: 1 }, start)
-        .error,
-    ).toBe(true);
-    expect(
-      perform(state, 'citizen', { ...command, id: 'two', amount: 1 }, next)
-        .error,
-    ).toBeUndefined();
-    expect(perform(state, 'citizen', command, start).state.fraud[0]?.id).toBe(
-      'withdraw:withdraw-one',
-    );
+    } as unknown as Command;
+    expect(perform(state, 'citizen', command)).toMatchObject({
+      error: true,
+      state,
+    });
   });
   it('awards a course only after attendance, approval and quiz, at most once', () => {
     let state = seed();

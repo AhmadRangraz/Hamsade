@@ -4,18 +4,25 @@ import { ClipboardList, FilePlus2, MapPin, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { privateCase, visibleCase } from '../domain/access';
+import { blocked, privateCase, visibleCase } from '../domain/access';
 import { parseJalali, tehranInstant } from '../domain/calendar';
 import { transitions, totalScore } from '../domain/commands';
 import {
   districtName,
   districts,
+  homeDistrict,
   parameters,
   statusLabel,
 } from '../domain/data';
+import {
+  caseProgress,
+  neighborhoodIssues,
+  volunteerCategories,
+} from '../domain/neighborhood';
 import { gisLocations } from '../domain/integrations';
-import type { CivicCase, Project, Status, User } from '../domain/types';
+import type { CivicCase, Status, User } from '../domain/types';
 import { useDemo } from './state';
+import { MediaField, MediaPreview, storeMedia } from './media';
 import {
   Badge,
   Button,
@@ -77,9 +84,10 @@ export function LocationPicker({ district }: { district: string }) {
 
 export function SubmitCase() {
   const { state, send } = useDemo();
-  const [district, setDistrict] = useState('north');
+  const [district, setDistrict] = useState(homeDistrict);
   const [kind, setKind] = useState<CivicCase['kind']>('report');
-  const [photo, setPhoto] = useState('');
+  const [media, setMedia] = useState<File>();
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState<string | null>(null);
   const result = submitted
@@ -104,7 +112,7 @@ export function SubmitCase() {
                 tone="quiet"
                 onClick={() => {
                   setSubmitted(null);
-                  setPhoto('');
+                  setMedia(undefined);
                 }}
               >
                 ثبت مورد دیگر
@@ -113,7 +121,7 @@ export function SubmitCase() {
           ) : (
             <form
               className="form"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 const data = new FormData(e.currentTarget);
                 const value = parseJalali(text(data, 'date'));
@@ -121,21 +129,33 @@ export function SubmitCase() {
                   setError('تاریخ شمسی معتبر وارد کنید.');
                   return;
                 }
+                if (saving) return;
+                setSaving(true);
                 setError('');
-                setSubmitted('M-' + (1050 + state.cases.length));
-                send({
-                  type: 'submit',
-                  fields: {
-                    kind,
-                    district,
-                    title: text(data, 'title'),
-                    category: text(data, 'category'),
-                    description: text(data, 'description'),
-                    location: text(data, 'location'),
-                    date: value,
-                    photo,
-                  },
-                });
+                try {
+                  const attachment = media
+                    ? await storeMedia(media)
+                    : undefined;
+                  setSubmitted('M-' + (1050 + state.cases.length));
+                  send({
+                    type: 'submit',
+                    fields: {
+                      kind,
+                      district,
+                      title: text(data, 'title'),
+                      category: text(data, 'category'),
+                      description: text(data, 'description'),
+                      location: text(data, 'location'),
+                      date: value,
+                      photo: '',
+                      media: attachment,
+                    },
+                  });
+                } catch {
+                  setError('ذخیرهٔ فایل انجام نشد. فضای مرورگر را بررسی کنید.');
+                } finally {
+                  setSaving(false);
+                }
               }}
             >
               <div className="tab-row" aria-label="نوع پرونده">
@@ -203,9 +223,13 @@ export function SubmitCase() {
                   rows={4}
                 />
               </label>
-              <PhotoField label="افزودن عکس (اختیاری)" onChange={setPhoto} />
+              <MediaField
+                label="افزودن عکس یا ویدیو (اختیاری)"
+                file={media}
+                onChange={setMedia}
+              />
               {error && <Notice error>{error}</Notice>}
-              <Button type="submit">
+              <Button type="submit" disabled={saving}>
                 <FilePlus2 size={19} /> ثبت پرونده
               </Button>
             </form>
@@ -222,11 +246,66 @@ export function SubmitCase() {
             <li>نتیجهٔ کار پس از بازرسی در پرونده نمایش داده می‌شود.</li>
           </ol>
           <p className="muted">
-            نشانی دقیق و عکس فقط در فضای مربوط به پرونده نمایش داده می‌شوند.
+            نشانی دقیق و رسانه فقط در فضای مربوط به پرونده نمایش داده می‌شوند.
           </p>
         </Card>
       </div>
     </>
+  );
+}
+
+export function ReportProgress({ record }: { record: CivicCase }) {
+  if (record.kind !== 'report') return <Badge status={record.status} />;
+  const percent = caseProgress(record);
+  return (
+    <div className="report-progress">
+      <div>
+        <Badge status={record.status} />
+        {percent > 0 && <strong>{num(percent)}٪</strong>}
+      </div>
+      {percent > 0 && (
+        <progress
+          aria-label={'پیشرفت ' + record.title}
+          value={percent}
+          max={100}
+        />
+      )}
+    </div>
+  );
+}
+
+export function NeighborhoodPanel({ user }: { user: User }) {
+  const { state } = useDemo();
+  const issues = neighborhoodIssues(state, user);
+  return (
+    <Card>
+      <div className="section-head">
+        <h2>مسائل محلهٔ من</h2>
+        <span className="muted">{districtName(user.district)}</span>
+      </div>
+      {issues.length ? (
+        <ul className="neighborhood-list">
+          {issues.map((record) => (
+            <li key={record.id}>
+              <Link className="text-link" href={'/desk/cases/' + record.id}>
+                {record.title}
+              </Link>
+              {record.volunteer &&
+              record.status === 'review' &&
+              !record.project ? (
+                <Badge>
+                  داوطلب می‌پذیرد · {num(record.volunteer.reward)} کارا
+                </Badge>
+              ) : (
+                <ReportProgress record={record} />
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Empty>هنوز مسئله‌ای از همسایه‌های این ناحیه ثبت نشده است.</Empty>
+      )}
+    </Card>
   );
 }
 
@@ -390,7 +469,7 @@ export function CaseList({
             districtName(record.district),
             date(record.date),
             record.score ? num(totalScore(record.score)) : '—',
-            <Badge key="status" status={record.status} />,
+            <ReportProgress key="status" record={record} />,
           ])}
         />
       </Card>
@@ -420,26 +499,44 @@ export function CasePage({ user, id }: { user: User; id: string }) {
     );
   const full = privateCase(user, record);
   const operational = full && user.role !== 'citizen';
+  const volunteer = record.project?.method === 'volunteer';
+  const seesProof = operational || record.project?.worker === user.id;
+  const publicVolunteer = record.volunteer && record.district === user.district;
   return (
     <>
       <Heading title={record.title} action={<Badge status={record.status} />}>
         <bdi>{record.id}</bdi> · {record.category} ·{' '}
         {districtName(record.district)} · {date(record.date)}
       </Heading>
+      {record.kind === 'report' && (
+        <Card>
+          <h2>پیشرفت گزارش</h2>
+          <ReportProgress record={record} />
+        </Card>
+      )}
       <div className="grid-two">
         <Card>
           <h2>شرح پرونده</h2>
           <p>
-            {full
-              ? record.description
+            {full || publicVolunteer
+              ? full
+                ? record.description
+                : (record.volunteer?.task ?? record.description)
               : 'جزئیات عمومی در روند رسیدگی و امتیاز پرونده نمایش داده می‌شود.'}
           </p>
-          {full && (
+          {(full || publicVolunteer) && (
             <>
               <p>
                 <MapPin size={16} /> {record.location}
               </p>
-              {record.photo && (
+              {full && record.media && (
+                <MediaPreview
+                  key={record.media.id}
+                  media={record.media}
+                  label="رسانهٔ پرونده"
+                />
+              )}
+              {full && record.photo && (
                 <img
                   className="photo-preview"
                   src={record.photo}
@@ -458,8 +555,16 @@ export function CasePage({ user, id }: { user: User; id: string }) {
           )}
           {record.project && operational && (
             <div className="contract-summary">
-              <strong>{methods[record.project.method]}</strong>
-              <span>{money(record.project.price)}</span>
+              <strong>
+                {volunteer
+                  ? 'اجرای داوطلبانهٔ شهروند'
+                  : methods[record.project.method as keyof typeof methods]}
+              </strong>
+              <span>
+                {volunteer
+                  ? num(record.volunteer?.reward ?? 0) + ' کارا'
+                  : money(record.project.price)}
+              </span>
             </div>
           )}
           <p>
@@ -516,20 +621,38 @@ export function CasePage({ user, id }: { user: User; id: string }) {
                     </form>
                   </>
                 )}
-                {record.status === 'approved' && !record.confirmed && (
-                  <Button
-                    onClick={() =>
-                      send({ type: 'case', id, action: 'confirm' })
-                    }
-                  >
-                    تأیید کیفیت از سوی شهروند
-                  </Button>
-                )}
+                {record.status === 'approved' &&
+                  !record.confirmed &&
+                  !(volunteer && record.project?.worker === user.id) && (
+                    <Button
+                      onClick={() =>
+                        send({ type: 'case', id, action: 'confirm' })
+                      }
+                    >
+                      تأیید کیفیت از سوی شهروند
+                    </Button>
+                  )}
               </div>
             )}
         </Card>
         <ScoreWidget score={record.score} />
       </div>
+      {publicVolunteer &&
+        user.role === 'citizen' &&
+        record.owner !== user.id && (
+          <VolunteerActions key={record.id} record={record} user={user} />
+        )}
+      {seesProof && record.volunteer?.proof && (
+        <Card>
+          <h2>مدرک رفع مسئله</h2>
+          <p>{record.volunteer.proof.note}</p>
+          <MediaPreview
+            key={record.volunteer.proof.media.id}
+            media={record.volunteer.proof.media}
+            label="رسانهٔ رفع مسئله"
+          />
+        </Card>
+      )}
       {full && <CaseActions record={record} user={user} />}
       <div className="grid-two">
         <Card>
@@ -562,9 +685,90 @@ export function CasePage({ user, id }: { user: User; id: string }) {
   );
 }
 
+function VolunteerActions({ record, user }: { record: CivicCase; user: User }) {
+  const { state, send } = useDemo();
+  const [proof, setProof] = useState<File>();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  if (!record.volunteer || ['rejected', 'merged'].includes(record.status))
+    return null;
+  const assigned =
+    record.project?.method === 'volunteer' && record.project.worker === user.id;
+  return (
+    <Card>
+      <h2>مشارکت در رفع مسئله</h2>
+      {record.volunteer.task && <p>{record.volunteer.task}</p>}
+      <p>
+        با تأیید بازرس {num(record.volunteer.reward)} کارا به کیف پول داوطلب
+        اضافه می‌شود.
+      </p>
+      {record.status === 'review' && !record.project && (
+        <Button
+          disabled={blocked(state, user.role, 'case')}
+          onClick={() =>
+            send({ type: 'case', id: record.id, action: 'claimVolunteer' })
+          }
+        >
+          انجام این کار را می‌پذیرم
+        </Button>
+      )}
+      {assigned &&
+        (record.status === 'assigned' || record.status === 'rework') && (
+          <form
+            className="form"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!proof || saving) return;
+              const note = text(new FormData(event.currentTarget), 'note');
+              setSaving(true);
+              setError('');
+              try {
+                send({
+                  type: 'case',
+                  id: record.id,
+                  action: 'submitProof',
+                  note,
+                  proof: await storeMedia(proof),
+                });
+              } catch {
+                setError('ذخیرهٔ رسانه انجام نشد. لطفاً دوباره تلاش کنید.');
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            <label>
+              شرح کار انجام‌شده
+              <textarea name="note" minLength={8} maxLength={800} required />
+            </label>
+            <MediaField
+              label="عکس یا ویدیوی مدرک رفع مسئله"
+              file={proof}
+              onChange={setProof}
+              required
+            />
+            {error && <Notice error>{error}</Notice>}
+            <Button
+              type="submit"
+              disabled={saving || blocked(state, user.role, 'case')}
+            >
+              ارسال مدرک برای تأیید
+            </Button>
+          </form>
+        )}
+      {assigned && record.status === 'inspection' && (
+        <Notice>مدرک در صف بازرسی است.</Notice>
+      )}
+      {assigned && record.status === 'approved' && (
+        <Notice>رفع مسئله تأیید شد و پاداش به کیف پول شما اضافه شد.</Notice>
+      )}
+    </Card>
+  );
+}
+
 function CaseActions({ record, user }: { record: CivicCase; user: User }) {
   const { state, send } = useDemo();
-  const [method, setMethod] = useState<Project['method']>('direct');
+  const [method, setMethod] = useState<keyof typeof methods>('direct');
   const [image, setImage] = useState('');
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -572,7 +776,8 @@ function CaseActions({ record, user }: { record: CivicCase; user: User }) {
     (transitions[record.kind][action] as Status[]).includes(record.status);
   const id = record.id;
   const staff = user.role === 'district';
-  const isWorker = record.project?.worker === user.id;
+  const isWorker =
+    record.project?.worker === user.id && record.project.method !== 'volunteer';
   const canReview = staff && (allowed('reject') || allowed('merge'));
   return (
     <>
@@ -611,6 +816,38 @@ function CaseActions({ record, user }: { record: CivicCase; user: User }) {
           </form>
         </Card>
       )}
+      {staff &&
+        record.kind === 'report' &&
+        record.status === 'review' &&
+        record.score &&
+        !record.volunteer &&
+        volunteerCategories.includes(record.category) && (
+          <Card>
+            <h2>واگذاری به داوطلب محله</h2>
+            <p>
+              فقط کار کم‌خطر و مشخص را منتشر کنید. کار تخصصی را به مجری شهرداری
+              بسپارید.
+            </p>
+            <form
+              className="form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                send({
+                  type: 'case',
+                  id,
+                  action: 'openVolunteer',
+                  note: text(new FormData(event.currentTarget), 'task'),
+                });
+              }}
+            >
+              <label>
+                شرح عمومی کار داوطلبانه
+                <textarea name="task" minLength={8} maxLength={800} required />
+              </label>
+              <Button type="submit">انتشار برای داوطلبان ناحیه</Button>
+            </form>
+          </Card>
+        )}
       {staff && allowed('assign') && record.score && (
         <Card>
           <h2>ارجاع پرونده به مجری</h2>
@@ -639,7 +876,7 @@ function CaseActions({ record, user }: { record: CivicCase; user: User }) {
                 <select
                   value={method}
                   onChange={(e) =>
-                    setMethod(e.target.value as Project['method'])
+                    setMethod(e.target.value as keyof typeof methods)
                   }
                 >
                   {Object.entries(methods).map(([key, label]) => (

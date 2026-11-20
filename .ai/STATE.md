@@ -46,3 +46,9 @@ The Hamsade checkout contains the FORGE baseline plus an independent mock munici
 The Hamsade baseline imports FORGE commit `6b085ae9cb391f6eab28052fd6d5b0a35b82cf1b`. Both apps now call the same progression rules. Hamsade adds browser-local civic XP, levels, badge prerequisites, streaks, a weekly quest, a report-to-result mission, and opt-in sample standings.
 
 Verified repository lint and formatting, Hamsade type checking and production build, all 15 Hamsade unit tests, all six Hamsade Chromium tests, and all 15 original FORGE unit tests. The original NestJS API integration check could not start because Prisma's verified engine download returned HTTP 403.
+
+## Karashahr neighborhood update
+
+Karashahr defaults to District 2, Area 5. It shows report progress, neighborhood tasks with reviewed photo and video proof, verified event XP, Shahrvand and sample contracted parking vouchers, public citizen and area rankings, and a civilian emergency course. The citizen wallet supports spending and transaction history.
+
+Lint, formatting, type checking, the production build, all 20 domain tests and all nine Chromium tests passed. The browser run exercised video playback after role changes, reward approval, attendance XP, voucher checkout and one-time redemption. Store prices and acceptors remain illustrative because the pricing and partner sites returned HTTP 403.

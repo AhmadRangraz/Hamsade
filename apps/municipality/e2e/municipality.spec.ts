@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -20,7 +21,7 @@ test('citizen to district to contractor to inspector with rework', async ({
     .fill('مسیر محله پس از غروب روشنایی کافی ندارد.');
   await page.getByRole('button', { name: 'تقویم تاریخ مشاهده' }).click();
   await page.getByRole('button', { name: /^انتخاب /, pressed: true }).click();
-  await page.getByLabel('افزودن عکس (اختیاری)').setInputFiles({
+  await page.getByLabel('افزودن عکس یا ویدیو (اختیاری)').setInputFiles({
     name: 'demo.png',
     mimeType: 'image/png',
     buffer: Buffer.from(
@@ -29,7 +30,7 @@ test('citizen to district to contractor to inspector with rework', async ({
     ),
   });
   await expect(
-    page.getByRole('img', { name: 'پیش‌نمایش تصویر انتخاب‌شده' }),
+    page.getByRole('img', { name: 'پیش‌نمایش رسانهٔ انتخاب‌شده' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'ثبت پرونده' }).click();
   await page.getByRole('link', { name: 'مشاهدهٔ پرونده' }).click();
@@ -138,12 +139,20 @@ test('responsive navigation, dialog keyboard behavior and accessibility', async 
     .getByRole('navigation', { name: 'ناوبری اصلی' })
     .getByRole('link', { name: 'کیف پول کارا' })
     .click();
-  const open = page.getByRole('button', { name: 'درخواست برداشت آزمایشی' });
+  await expect(page.getByRole('button', { name: /برداشت/ })).toHaveCount(0);
+  await page.goto('/desk/shop');
+  await page
+    .locator('.product-card')
+    .filter({ hasText: 'کوپن پارکینگ طرف قرارداد' })
+    .getByRole('button', { name: 'افزودن به سبد' })
+    .click();
+  const open = page.getByRole('button', { name: 'پرداخت ترکیبی' });
   await open.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(open).toBeFocused();
+  await page.goto('/desk/wallet');
   const failures = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
     .analyze();
@@ -167,22 +176,22 @@ test('mixed purchase and settlement keep the original rate', async ({
   await page.goto('/desk/shop');
   const product = page
     .locator('.product-card')
-    .filter({ hasText: 'کوپن پارکینگ عمومی' });
+    .filter({ hasText: 'کوپن پارکینگ طرف قرارداد' });
   await product.getByRole('button', { name: 'افزودن به سبد' }).click();
   await page.getByRole('button', { name: 'پرداخت ترکیبی' }).click();
   await page.getByLabel('سهم پرداخت با کارا').fill('20');
   await page.getByRole('button', { name: 'صدور رسید آزمایشی' }).click();
   await expect(page.getByRole('dialog')).toContainText(
-    '۲۰ کارا + ۲۰٬۰۰۰ تومان',
+    '۲۰ کارا + ۸۰٬۰۰۰ تومان',
   );
   await page.keyboard.press('Escape');
   await login(page, 'فروشنده');
   await page.goto('/desk/products');
   const order = page
     .getByRole('row')
-    .filter({ hasText: 'کوپن پارکینگ عمومی' })
+    .filter({ hasText: 'کوپن پارکینگ طرف قرارداد' })
     .filter({
-      has: page.getByRole('cell', { name: '۲۰٬۰۰۰ تومان', exact: true }),
+      has: page.getByRole('cell', { name: '۸۰٬۰۰۰ تومان', exact: true }),
     });
   await order.getByRole('button', { name: 'تسویهٔ آزمایشی' }).click();
   await expect(order).toContainText('تسویه شد');
@@ -307,4 +316,138 @@ test('progress is discoverable and demo ranking consent persists', async ({
   await expect(
     page.getByRole('heading', { name: 'دسترسی به این بخش محدود است' }),
   ).toBeVisible();
+});
+
+test('a neighbor uploads video proof and receives Cara only after inspection', async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00Z'));
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { name: 'از گزارش تا نتیجه، با هم.' }),
+  ).toBeVisible();
+  await expect(page).toHaveTitle(/کاراشهر/);
+  await login(page, 'شهروند');
+  await expect(
+    page.getByRole('heading', { name: 'گزارش‌های من' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'مسائل محلهٔ من' }),
+  ).toBeVisible();
+  await expect(page.locator('.topbar')).toContainText('منطقه ۲، ناحیه ۵');
+  const title = 'پاکسازی مسیر پیاده‌روی بوستان سپید';
+  await page.getByRole('link', { name: title, exact: true }).click();
+  await expect(
+    page.getByRole('progressbar', { name: 'پیشرفت ' + title }),
+  ).toHaveAttribute('value', '25');
+  await page.getByRole('button', { name: 'انجام این کار را می‌پذیرم' }).click();
+  await page
+    .getByLabel('شرح کار انجام‌شده')
+    .fill('زباله‌های سبک از مسیر پیاده‌روی پاکسازی شد.');
+  await page
+    .getByLabel('عکس یا ویدیوی مدرک رفع مسئله')
+    .setInputFiles(
+      fileURLToPath(
+        new URL('./fixtures/volunteer-proof.webm', import.meta.url),
+      ),
+    );
+  await expect(page.locator('video')).toBeVisible();
+  await page.getByRole('button', { name: 'ارسال مدرک برای تأیید' }).click();
+  await expect(
+    page.getByRole('progressbar', { name: 'پیشرفت ' + title }),
+  ).toHaveAttribute('value', '85');
+  await page.goto('/desk/wallet');
+  await expect(
+    page.getByText('پاداش رفع مسئلهٔ محله', { exact: true }),
+  ).toHaveCount(0);
+  await login(page, 'بازرس کیفیت');
+  await page.goto('/desk/inspection/M-1050');
+  const proof = page.locator('video[aria-label="رسانهٔ رفع مسئله"]');
+  await expect(proof).toBeVisible();
+  await expect
+    .poll(() => proof.evaluate((node: HTMLVideoElement) => node.videoWidth))
+    .toBe(32);
+  await page
+    .getByLabel('دلیل و شرح نتیجه')
+    .fill('پاکسازی مسیر با مدرک ارسالی تأیید شد.');
+  await page.getByRole('button', { name: 'تأیید نتیجه' }).click();
+  await expect(
+    page.getByRole('progressbar', { name: 'پیشرفت ' + title }),
+  ).toHaveAttribute('value', '100');
+  await login(page, 'شهروند');
+  await page.goto('/desk/wallet');
+  await expect(
+    page.getByText('پاداش رفع مسئلهٔ محله', { exact: true }),
+  ).toBeVisible();
+  await page.goto('/transparency');
+  await expect(
+    page.getByRole('heading', { name: 'شهروند برتر' }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ناحیهٔ برتر' })).toBeVisible();
+  await expect(page.locator('video')).toHaveCount(0);
+});
+
+test('event participation awards XP after attendance and shows the emergency lesson', async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00Z'));
+  await login(page, 'شهروند');
+  await page.goto('/desk/community');
+  const event = page
+    .getByRole('row')
+    .filter({ hasText: 'پاکسازی داوطلبانهٔ محله' });
+  await event.getByRole('button', { name: 'ثبت‌نام در رویداد' }).click();
+  await expect(event).toContainText('در انتظار تأیید حضور');
+  await login(page, 'مدیر منطقه');
+  await page.goto('/desk/community');
+  await event.getByRole('button', { name: 'تأیید حضور شهروند' }).click();
+  await expect(event).toContainText('حضور تأیید شد');
+  await login(page, 'شهروند');
+  await page.goto('/desk/progress');
+  await expect(
+    page.getByText('حضور تأییدشده در رویداد', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('۲۰ امتیاز تجربه', { exact: true }),
+  ).toBeVisible();
+  await page.goto('/desk/training');
+  const lesson = page.locator('.ui-panel').filter({
+    has: page.getByRole('heading', { name: 'در زمان جنگ چه کار کنیم؟' }),
+  });
+  await lesson.getByRole('button', { name: 'ورود به درس' }).click();
+  await page.getByRole('button', { name: 'پخش درس' }).click();
+  await expect(
+    page.getByText(/هشدارها و دستورهای امدادی را از منابع رسمی دنبال کنید/),
+  ).toBeVisible();
+});
+
+test('the citizen can buy a Shahrvand coupon and record one use at a parking partner', async ({
+  page,
+}) => {
+  await login(page, 'شهروند');
+  await page.goto('/desk/shop');
+  const item = page
+    .locator('.product-card')
+    .filter({ hasText: 'کوپن خرید فروشگاه شهروند' });
+  await expect(item).toContainText('۵۰۰٬۰۰۰ تومان');
+  await item.getByRole('button', { name: 'افزودن به سبد' }).click();
+  await page.getByRole('button', { name: 'پرداخت ترکیبی' }).click();
+  await page.getByRole('button', { name: 'صدور رسید آزمایشی' }).click();
+  await expect(page.getByRole('dialog')).toContainText('ثبت شد');
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('heading', { name: 'کوپن خرید فروشگاه شهروند', level: 3 }),
+  ).toBeVisible();
+  const coupon = page
+    .locator('.ui-panel')
+    .filter({ has: page.getByText('O-100/parking/1', { exact: true }) })
+    .last();
+  await coupon.getByLabel('پذیرندهٔ کوپن').selectOption('parking-5');
+  await coupon.getByRole('button', { name: 'ثبت استفادهٔ آزمایشی' }).click();
+  await expect(coupon).toContainText('مصرف شد');
+  await page.reload();
+  await expect(coupon).toContainText('پارکینگ طرف قرارداد نمونهٔ ناحیهٔ ۵');
+  await expect(
+    coupon.getByRole('button', { name: 'ثبت استفادهٔ آزمایشی' }),
+  ).toHaveCount(0);
 });

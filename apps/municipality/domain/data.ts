@@ -10,6 +10,8 @@ import type {
   User,
 } from './types';
 
+export const brand = { name: 'کاراشهر', slogan: 'از گزارش تا نتیجه، با هم.' };
+export const homeDistrict = 'north';
 export const users = fixtures.users as User[];
 export const districts = fixtures.districts;
 export const locationOptions = fixtures.locations as Record<string, string[]>;
@@ -151,6 +153,27 @@ export function seed(): State {
       events: [],
     },
     {
+      id: 'M-1050',
+      title: 'پاکسازی مسیر پیاده‌روی بوستان سپید',
+      kind: 'report',
+      category: 'پسماند',
+      status: 'review',
+      district: homeDistrict,
+      owner: 'district',
+      description:
+        'زباله‌های سبک و خشک کنار مسیر پیاده‌روی جمع‌آوری شوند. از دست زدن به اشیای تیز یا مشکوک خودداری کنید.',
+      location: 'بوستان سپید',
+      date: '2026-11-20',
+      photo: '',
+      score: { revision: north, values: [55, 80, 90] },
+      volunteer: { reward: 30 },
+      votes: [],
+      evidence: [],
+      confirmed: false,
+      inspections: [],
+      events: [],
+    },
+    {
       id: 'M-1030',
       title: 'کاشت درخت در میدان نارون',
       kind: 'idea',
@@ -205,7 +228,6 @@ export function seed(): State {
       },
     ],
     rate: 1000,
-    cap: 150,
     categories: fixtures.categories,
     disabled: [],
     imports: [],
@@ -230,10 +252,59 @@ export function seed(): State {
         buyer: 'citizen',
         lines: [{ product: products[0]!, quantity: 1 }],
         cara: 10,
-        toman: 30000,
+        toman: products[0]!.price - 10000,
         rate: 1000,
         at: seedTime,
       },
     ],
+  };
+}
+
+export function restoreDemo(state: State): State {
+  const defaults = seed();
+  const restoreMissing = <T extends { id: string }>(
+    items: T[],
+    additions: T[],
+  ) => [
+    ...items,
+    ...additions.filter(
+      (item) => !items.some((existing) => existing.id === item.id),
+    ),
+  ];
+  return {
+    ...state,
+    cases: restoreMissing(
+      state.cases,
+      defaults.cases.filter((record) => record.volunteer),
+    ),
+    courses: restoreMissing(state.courses, defaults.courses),
+    products: restoreMissing(state.products, defaults.products).map(
+      (product) => {
+        const next = defaults.products.find((item) => item.id === product.id);
+        const previousPrices: Record<string, number> = {
+          parking: 40000,
+          traffic: 85000,
+          fire: 70000,
+          topup: 20000,
+          ticket: 30000,
+          pass: 55000,
+          safety: 125000,
+          tree: 65000,
+        };
+        if (!next) return product;
+        return {
+          ...product,
+          coupon: next.coupon,
+          name:
+            product.id === 'parking' && product.name === 'کوپن پارکینگ عمومی'
+              ? next.name
+              : product.name,
+          price:
+            product.price === previousPrices[product.id]
+              ? next.price
+              : product.price,
+        };
+      },
+    ),
   };
 }

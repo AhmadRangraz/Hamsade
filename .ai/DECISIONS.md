@@ -105,3 +105,7 @@ Compatibility references reviewed before installing dependencies included the of
 ## Citizen progression
 
 Share FORGE's pure progression rules with Hamsade. Keep municipal event eligibility in the mock command boundary and deduplicate by citizen, action and source. The progression ledger holds XP separately from Cara. The neighborhood ranking is a local, opt-in comparison against fictional peers.
+
+## Karashahr neighborhood update
+
+Use District 2, Area 5 as the home scope. District staff publish low-risk tasks, and the inspector verifies uploaded proof before the volunteer earns Cara and XP. Use IndexedDB for photo and video blobs. Store coupon use and event confirmation in the existing mock command boundary.

@@ -1,6 +1,8 @@
-# Hamsade · همساده
+# Karashahr · کاراشهر
 
-A Persian-first participatory municipality demo, built in Hamsade from the FORGE boilerplate. Pick a fictional persona to try reporting, district triage, contractor execution, inspection, Cara checkout or community training.
+**از گزارش تا نتیجه، با هم.**
+
+A Persian-first participatory municipality demo for District 2, Area 5, built in Hamsade from the FORGE boilerplate. Pick a fictional persona to try reporting, district triage, contractor execution, inspection, Cara checkout or community training.
 
 Use Node.js 24 and pnpm 11.25.0. From the Hamsade checkout:
 

@@ -5,8 +5,11 @@ import {
   visibleCase,
   visibleProducts,
 } from './access';
-import { jalaliMonth } from './calendar';
-import { districtName, districts, statusLabel, users } from './data';
+import { tehranDay } from './calendar';
+import { couponLocations, ownedCoupons } from './coupons';
+import { validMedia } from './media';
+import { volunteerCategories } from './neighborhood';
+import { districtName, districts, events, statusLabel, users } from './data';
 import { gisLocations, municipalAdapters } from './integrations';
 import { recordActivity, setRankingConsent } from './progression';
 import type {
@@ -14,6 +17,7 @@ import type {
   CivicCase,
   Course,
   Inspection,
+  MediaRef,
   Permission,
   Product,
   Project,
@@ -34,6 +38,7 @@ type CaseFields = Pick<
   | 'location'
   | 'date'
   | 'photo'
+  | 'media'
 >;
 export type Command =
   | { type: 'submit'; fields: CaseFields }
@@ -49,6 +54,9 @@ export type Command =
         | 'rework'
         | 'reject'
         | 'merge'
+        | 'openVolunteer'
+        | 'claimVolunteer'
+        | 'submitProof'
         | 'vote'
         | 'evidence'
         | 'confirm';
@@ -58,10 +66,12 @@ export type Command =
       inspection?: Inspection;
       target?: string;
       document?: Attachment;
+      proof?: MediaRef;
     }
   | { type: 'weights'; district: string; weights: Score['values'] }
   | { type: 'checkout'; id: string; cart: Record<string, number>; cara: number }
-  | { type: 'withdraw'; id: string; amount: number }
+  | { type: 'eventAttendance'; event: string; action: 'join' | 'approve' }
+  | { type: 'redeemCoupon'; coupon: string; location: string }
   | { type: 'product'; product: Product }
   | { type: 'settle'; id: string }
   | { type: 'course'; course: Course }
@@ -72,7 +82,7 @@ export type Command =
       code?: string;
       answer?: string;
     }
-  | { type: 'settings'; rate: number; cap: number }
+  | { type: 'settings'; rate: number }
   | { type: 'category'; name: string }
   | { type: 'permission'; role: Role; action?: Permission }
   | { type: 'fraud'; id: string }
@@ -97,15 +107,6 @@ export const totalScore = (score: Score) =>
     (total, value, index) => total + value * score.revision.weights[index]!,
     0,
   ) / 100;
-export const monthWithdrawals = (state: State, user: Role, now: string) =>
-  state.ledger
-    .filter(
-      (row) =>
-        row.owner === user &&
-        row.key.startsWith('withdraw:') &&
-        jalaliMonth(row.at) === jalaliMonth(now),
-    )
-    .reduce((sum, row) => sum - row.amount, 0);
 const fail = (
   state: State,
   message = 'دسترسی یا وضعیت این عملیات معتبر نیست.',
@@ -201,6 +202,85 @@ function applyCase(
     });
   const note = cmd.note?.trim() ?? '';
   const action = cmd.action;
+  if (
+    action === 'openVolunteer' ||
+    action === 'claimVolunteer' ||
+    action === 'submitProof'
+  ) {
+    if (
+      record.kind !== 'report' ||
+      record.district !== user.district ||
+      !volunteerCategories.includes(record.category)
+    )
+      return fail(state);
+    const step = (patch: Partial<CivicCase>, status: Status, message: string) =>
+      update({
+        ...record,
+        ...patch,
+        status,
+        events: [
+          ...record.events,
+          { at: now, status, note: message, by: user.id },
+        ],
+      });
+
+    if (action === 'openVolunteer') {
+      if (
+        user.role !== 'district' ||
+        record.status !== 'review' ||
+        !record.score ||
+        record.project ||
+        record.volunteer ||
+        note.length < 8 ||
+        note.length > 800
+      )
+        return fail(
+          state,
+          'ابتدا گزارش را ارزیابی کنید و وظیفهٔ کم‌خطر را توضیح دهید.',
+        );
+      return step(
+        { volunteer: { reward: 30, task: note } },
+        'review',
+        'گزارش برای مشارکت داوطلبانه منتشر شد.',
+      );
+    }
+    if (
+      user.role !== 'citizen' ||
+      record.owner === user.id ||
+      !record.volunteer
+    )
+      return fail(state);
+    if (action === 'claimVolunteer') {
+      if (record.status !== 'review' || record.project) return fail(state);
+      return step(
+        {
+          project: {
+            worker: user.id,
+            inspector: 'inspector',
+            method: 'volunteer',
+            price: 0,
+          },
+        },
+        'assigned',
+        'داوطلب انجام کار را پذیرفت.',
+      );
+    }
+    if (
+      record.project?.worker !== user.id ||
+      record.project.method !== 'volunteer' ||
+      (record.status !== 'assigned' && record.status !== 'rework') ||
+      !cmd.proof ||
+      !validMedia(cmd.proof) ||
+      note.length < 8 ||
+      note.length > 800
+    )
+      return fail(state, 'توضیح و عکس یا ویدیوی معتبر از نتیجهٔ کار لازم است.');
+    return step(
+      { volunteer: { ...record.volunteer, proof: { media: cmd.proof, note } } },
+      'inspection',
+      'مدرک انجام کار برای بازرس فرستاده شد.',
+    );
+  }
   if (action === 'vote' || action === 'evidence' || action === 'confirm') {
     if (
       user.role !== 'citizen' ||
@@ -208,7 +288,13 @@ function applyCase(
     )
       return fail(state);
     if (action === 'confirm') {
-      if (record.status !== 'approved' || record.confirmed) return fail(state);
+      if (
+        record.status !== 'approved' ||
+        record.confirmed ||
+        (record.project?.method === 'volunteer' &&
+          record.project.worker === user.id)
+      )
+        return fail(state);
       return update(
         { ...record, confirmed: true },
         recordActivity(state, user.id, 'qualityConfirmed', record.id, now),
@@ -311,6 +397,7 @@ function applyCase(
       )
         return fail(state, 'امتیاز، مجری منطقه و شرایط ارجاع را بررسی کنید.');
       next.project = p;
+      next.volunteer = undefined;
     }
     if ((action === 'reject' || action === 'merge') && !note)
       return fail(state, 'ثبت دلیل الزامی است.');
@@ -332,6 +419,7 @@ function applyCase(
     if (
       !privateCase(user, record) ||
       record.project?.worker !== user.id ||
+      record.project?.method === 'volunteer' ||
       !note
     )
       return fail(state, 'مجری پرونده باید شرح پیشرفت ثبت کند.');
@@ -354,7 +442,26 @@ function applyCase(
     )
       return fail(state, 'تاریخ، محل، چک‌لیست و امتیاز بازرسی را بررسی کنید.');
     next.inspections = [...record.inspections, inspection];
+    if (record.project.method === 'volunteer' && !record.volunteer?.proof)
+      return fail(state, 'بازرسی کار داوطلبانه به مدرک انجام کار نیاز دارد.');
     if (action === 'approve') {
+      if (record.project.method === 'volunteer' && record.volunteer) {
+        ledger = recordMove(
+          ledger,
+          record.project.worker,
+          'volunteer:' + record.id,
+          record.volunteer.reward,
+          'پاداش رفع مسئلهٔ محله',
+          now,
+        );
+        ledger = recordActivity(
+          ledger,
+          record.project.worker,
+          'issueSolved',
+          record.id,
+          now,
+        );
+      }
       if (record.kind === 'idea') {
         ledger = recordMove(
           state,
@@ -438,6 +545,7 @@ export function execute(
         !gisLocations(f.district).includes(f.location) ||
         !validDay(f.date) ||
         !validPhoto(f.photo) ||
+        (f.media && !validMedia(f.media)) ||
         f.title.trim().length < 4 ||
         f.description.trim().length < 8
       )
@@ -565,24 +673,72 @@ export function execute(
         );
       return pass(next, 'سفارش و رسید آزمایشی ثبت شد.');
     }
-    case 'withdraw': {
-      if (user.role !== 'citizen' || !cmd.id.trim()) return fail(state);
-      const key = 'withdraw:' + cmd.id;
-      if (state.ledger.some((row) => row.key === key))
-        return repeated(state, key, 'تلاش تکراری برای برداشت');
+    case 'eventAttendance': {
+      const event = events.find(
+        (item) => item.id === cmd.event && item.district === user.district,
+      );
+      if (!event) return fail(state);
+      const rows = state.eventAttendance ?? [];
+      const current = rows.find(
+        (row) => row.event === event.id && row.citizen === 'citizen',
+      );
+      if (cmd.action === 'join') {
+        if (user.role !== 'citizen' || current) return fail(state);
+        return pass(
+          {
+            ...state,
+            eventAttendance: [...rows, { event: event.id, citizen: user.id }],
+          },
+          'در رویداد ثبت‌نام کردید.',
+        );
+      }
       if (
-        !integer(
-          cmd.amount,
-          1,
-          Math.min(
-            balance(state, user.id),
-            state.cap - monthWithdrawals(state, user.id, now),
-          ),
+        cmd.action !== 'approve' ||
+        user.role !== 'district' ||
+        !current ||
+        current.approvedAt ||
+        tehranDay(now) < event.date
+      )
+        return fail(
+          state,
+          'حضور پس از شروع روز رویداد برای فرد ثبت‌نام‌شده قابل تأیید است.',
+        );
+      const next = {
+        ...state,
+        eventAttendance: rows.map((row) =>
+          row === current ? { ...row, approvedAt: now } : row,
+        ),
+      };
+      return pass(
+        recordActivity(next, current.citizen, 'eventAttended', event.id, now),
+        'حضور تأیید شد و امتیاز تجربه ثبت شد.',
+      );
+    }
+    case 'redeemCoupon': {
+      if (user.role !== 'citizen') return fail(state);
+      const coupon = ownedCoupons(state, user.id).find(
+        (item) => item.id === cmd.coupon,
+      );
+      if (
+        !coupon ||
+        coupon.used ||
+        !couponLocations[coupon.kind].some(
+          (location) => location.id === cmd.location,
         )
       )
-        return fail(state, 'مبلغ از موجودی یا سقف ماه شمسی بیشتر است.');
+        return fail(
+          state,
+          'کوپن معتبر نیست، قبلاً استفاده شده یا این پذیرنده مجاز نیست.',
+        );
       return pass(
-        recordMove(state, user.id, key, -cmd.amount, 'برداشت آزمایشی', now),
+        {
+          ...state,
+          couponsUsed: [
+            ...(state.couponsUsed ?? []),
+            { couponId: coupon.id, location: cmd.location, at: now },
+          ],
+        },
+        'استفادهٔ آزمایشی در پذیرنده ثبت شد.',
       );
     }
     case 'product': {
@@ -598,7 +754,8 @@ export function execute(
         !p.name.trim() ||
         !integer(p.price, 1, 1_000_000_000) ||
         !integer(p.stock, 0, 100_000) ||
-        p.topup !== existing?.topup
+        p.topup !== existing?.topup ||
+        p.coupon !== existing?.coupon
       )
         return fail(state, 'مالکیت، قیمت یا موجودی کالا معتبر نیست.');
       return pass({
@@ -726,10 +883,8 @@ export function execute(
       });
     }
     case 'settings':
-      return user.role === 'hq' &&
-        integer(cmd.rate, 1, 1_000_000) &&
-        integer(cmd.cap, 0, 100_000)
-        ? pass({ ...state, rate: cmd.rate, cap: cmd.cap })
+      return user.role === 'hq' && integer(cmd.rate, 1, 1_000_000)
+        ? pass({ ...state, rate: cmd.rate })
         : fail(state);
     case 'category':
       return user.role === 'hq' &&
@@ -856,5 +1011,7 @@ export function execute(
         payment.label,
       );
     }
+    default:
+      return fail(state);
   }
 }

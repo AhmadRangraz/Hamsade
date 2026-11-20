@@ -1429,3 +1429,59 @@ dialog::backdrop {
   justify-content: space-between;
   gap: 6px 12px;
 }
+
+.report-progress {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 110px;
+}
+
+.report-progress > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.report-progress strong {
+  font-size: 0.85rem;
+}
+
+.report-progress progress {
+  inline-size: 100%;
+  block-size: 9px;
+  accent-color: var(--primary);
+}
+
+.neighborhood-list {
+  list-style: none;
+  padding-inline-start: 0;
+  margin-block: 0;
+}
+
+.neighborhood-list li {
+  display: grid;
+  gap: 8px;
+  padding-block: 12px;
+}
+
+.neighborhood-list li + li {
+  border-block-start: 1px solid var(--line);
+}
+
+.case-media {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: 24rem;
+  margin-block: 8px;
+  border-radius: 12px;
+}
+
+.form-media small {
+  display: block;
+  margin-block-start: 4px;
+}
+
+.coupon-code {
+  overflow-wrap: anywhere;
+}

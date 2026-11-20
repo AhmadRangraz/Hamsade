@@ -9,7 +9,12 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { digits, jalaliInput, parseJalali } from '../domain/calendar';
+import {
+  digits,
+  jalaliInput,
+  parseJalali,
+  tehranDay,
+} from '../domain/calendar';
 import { events } from '../domain/data';
 import type { Course, User } from '../domain/types';
 import { useDemo } from './state';
@@ -123,7 +128,9 @@ export function Training({ user }: { user: User }) {
                 ? 'پسماند خشک تمیز را جدا کنیم؟'
                 : course.id === 'safety'
                   ? 'مسیر خروج باید باز بماند؟'
-                  : 'مطالب درس را مرور کردید؟'}
+                  : course.id === 'civil-emergency'
+                    ? 'در تخلیهٔ اضطراری باید از مسیرهای رسمی اعلام‌شده استفاده کنیم؟'
+                    : 'مطالب درس را مرور کردید؟'}
               <select name="answer">
                 <option value="no">خیر</option>
                 <option value="yes">بله</option>
@@ -409,28 +416,85 @@ function AttendanceCode({ course }: { course: Course }) {
   );
 }
 
-export function Community() {
+function NeighborhoodEvents({ user }: { user: User }) {
   const { state, send } = useDemo();
+  const today = tehranDay(new Date().toISOString());
+  return (
+    <Card>
+      <div className="section-head">
+        <h2>رویدادهای محله</h2>
+        <CalendarDays size={22} />
+      </div>
+      <p>پس از تأیید حضور توسط مدیر منطقه، ۲۰ امتیاز تجربه دریافت می‌کنید.</p>
+      <DataTable
+        head={['رویداد', 'زمان', 'مکان', 'مشارکت']}
+        rows={events
+          .filter((event) => event.district === user.district)
+          .map((event) => {
+            const row = state.eventAttendance?.find(
+              (entry) => entry.event === event.id,
+            );
+            return [
+              event.name,
+              date(event.date),
+              event.venue,
+              row?.approvedAt ? (
+                <Badge key="verified" status="approved">
+                  حضور تأیید شد
+                </Badge>
+              ) : user.role === 'district' ? (
+                <Button
+                  key="approve"
+                  disabled={!row || today < event.date}
+                  onClick={() =>
+                    send({
+                      type: 'eventAttendance',
+                      event: event.id,
+                      action: 'approve',
+                    })
+                  }
+                >
+                  {row ? 'تأیید حضور شهروند' : 'فعلاً بدون ثبت‌نام'}
+                </Button>
+              ) : row ? (
+                <Badge key="enrolled">ثبت‌نام شد · در انتظار تأیید حضور</Badge>
+              ) : (
+                <Button
+                  key="join"
+                  onClick={() =>
+                    send({
+                      type: 'eventAttendance',
+                      event: event.id,
+                      action: 'join',
+                    })
+                  }
+                >
+                  ثبت‌نام در رویداد
+                </Button>
+              ),
+            ];
+          })}
+      />
+    </Card>
+  );
+}
+
+export function Community({ user }: { user: User }) {
+  const { state, send } = useDemo();
+  if (user.role === 'district')
+    return (
+      <>
+        <Heading title="مدیریت رویدادهای محله" />
+        <NeighborhoodEvents user={user} />
+      </>
+    );
   return (
     <>
       <Heading title="مشارکت محله">
         رویدادهای محلی، نظرسنجی و خدمات شهری آزمایشی.
       </Heading>
       <div className="grid-two">
-        <Card>
-          <div className="section-head">
-            <h2>تقویم محله</h2>
-            <CalendarDays size={22} />
-          </div>
-          <DataTable
-            head={['رویداد', 'زمان', 'مکان']}
-            rows={events.map((event) => [
-              event.name,
-              date(event.date),
-              event.venue,
-            ])}
-          />
-        </Card>
+        <NeighborhoodEvents user={user} />
         <Card>
           <h2>نظرسنجی اولویت محله</h2>
           {state.ledger.some((entry) => entry.key === 'survey:citizen') ? (

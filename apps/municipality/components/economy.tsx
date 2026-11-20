@@ -19,7 +19,7 @@ import {
   routes,
   visibleProducts,
 } from '../domain/access';
-import { balance, monthWithdrawals } from '../domain/commands';
+import { balance } from '../domain/commands';
 import {
   districtName,
   districts,
@@ -27,6 +27,7 @@ import {
   roleLabel,
   users,
 } from '../domain/data';
+import { couponLocations, ownedCoupons } from '../domain/coupons';
 import type { Order, Product, User } from '../domain/types';
 import { useDemo } from './state';
 import {
@@ -58,6 +59,7 @@ const earningSources = [
   'گزارش معتبر',
   'پیشنهاد اجراشده',
   'مشارکت در پرونده',
+  'رفع تأییدشدهٔ مسئلهٔ محله',
   'دوره و آزمون',
   'خرید',
   'نظرسنجی',
@@ -65,11 +67,8 @@ const earningSources = [
 ];
 
 export function WalletPage({ user }: { user: User }) {
-  const { state, send } = useDemo();
-  const [open, setOpen] = useState(false);
+  const { state } = useDemo();
   const available = balance(state, user.id);
-  const taken = monthWithdrawals(state, user.id, new Date().toISOString());
-  const remaining = Math.max(0, state.cap - taken);
   return (
     <>
       <Heading title="کیف پول کارا">
@@ -80,19 +79,9 @@ export function WalletPage({ user }: { user: User }) {
           <WalletWidget balance={available} rate={state.rate} />
         </Card>
         <Card>
-          <h2>سقف برداشت ماه شمسی</h2>
-          <p>
-            {num(taken)} از {num(state.cap)} کارا برداشت شده است.
-          </p>
+          <h2>مصرف اعتبار</h2>
+          <p>کارا در فروشگاه شهری برای کالا و کوپن قابل استفاده است.</p>
           <p>نرخ فعلی: هر کارا {money(state.rate)}</p>
-          {user.role === 'citizen' && (
-            <Button
-              disabled={!remaining || !available}
-              onClick={() => setOpen(true)}
-            >
-              درخواست برداشت آزمایشی
-            </Button>
-          )}
         </Card>
       </div>
       <Card>
@@ -123,38 +112,6 @@ export function WalletPage({ user }: { user: User }) {
           ))}
         </div>
       </Card>
-      {open && (
-        <Modal title="برداشت آزمایشی کارا" onClose={() => setOpen(false)}>
-          <form
-            className="form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              send({
-                type: 'withdraw',
-                id: id(),
-                amount: number(new FormData(e.currentTarget), 'amount'),
-              });
-              setOpen(false);
-            }}
-          >
-            <p>
-              حداکثر {num(Math.min(remaining, available))} کارا برای برداشت در
-              دسترس است.
-            </p>
-            <label>
-              مبلغ کارا
-              <input
-                name="amount"
-                type="number"
-                min={1}
-                max={Math.min(remaining, available)}
-                required
-              />
-            </label>
-            <Button type="submit">ثبت برداشت آزمایشی</Button>
-          </form>
-        </Modal>
-      )}
     </>
   );
 }
@@ -213,6 +170,59 @@ function OrderTable({
     />
   );
 }
+function CouponCard({
+  coupon,
+}: {
+  coupon: ReturnType<typeof ownedCoupons>[number];
+}) {
+  const { send } = useDemo();
+  const locations = couponLocations[coupon.kind];
+  const usedAt =
+    coupon.used &&
+    locations.find((location) => location.id === coupon.used?.location);
+  return (
+    <Card>
+      <h3>{coupon.name}</h3>
+      <p>ارزش کوپن: {money(coupon.value)}</p>
+      <p className="coupon-code">
+        <bdi>{coupon.id}</bdi>
+      </p>
+      {coupon.used ? (
+        <Badge status="approved">
+          مصرف شد · {usedAt?.name} · {date(coupon.used.at)}
+        </Badge>
+      ) : (
+        <form
+          className="form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            send({
+              type: 'redeemCoupon',
+              coupon: coupon.id,
+              location: text(new FormData(event.currentTarget), 'location'),
+            });
+          }}
+        >
+          <label>
+            پذیرندهٔ کوپن
+            <select name="location" required defaultValue="">
+              <option value="">انتخاب پذیرنده</option>
+              {locations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button type="submit" tone="quiet">
+            ثبت استفادهٔ آزمایشی
+          </Button>
+        </form>
+      )}
+    </Card>
+  );
+}
+
 export function Shop() {
   const { state, user, send } = useDemo();
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -220,6 +230,7 @@ export function Shop() {
   const [cara, setCara] = useState(0);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [checkout, setCheckout] = useState(false);
+  const coupons = user ? ownedCoupons(state, user.id) : [];
   const receipt = state.orders.find((order) => order.id === orderId);
   const activeCart = receipt ? {} : cart;
   const products = state.products.filter(
@@ -250,7 +261,8 @@ export function Shop() {
   return (
     <>
       <Heading title="فروشگاه شهری" action={<Badge>خرید آزمایشی</Badge>}>
-        کوپن خدمات، کالاهای محله و پرداخت ترکیبی با کارا و تومان.
+        کوپن شهروند، پارکینگ و خرید ترکیبی با کارا و تومان. قیمت‌ها برای
+        نمونه‌اند و درگاه پذیرنده آزمایشی است.
       </Heading>
       <div className="form-layout shop-layout">
         <div className="stack">
@@ -283,6 +295,13 @@ export function Shop() {
                   <Badge>{p.kind === 'physical' ? 'فیزیکی' : 'دیجیتال'}</Badge>
                   <h2>{p.name}</h2>
                   <p>{money(p.price)}</p>
+                  {p.coupon && (
+                    <small>
+                      {p.coupon === 'parking'
+                        ? 'ویژهٔ پارکینگ‌های طرف قراردادِ نمونه'
+                        : 'ویژهٔ پذیرندهٔ نمونهٔ فروشگاه شهروند'}
+                    </small>
+                  )}
                   <Button
                     tone="quiet"
                     disabled={!p.stock || (activeCart[p.id] ?? 0) >= p.stock}
@@ -354,6 +373,19 @@ export function Shop() {
         <OrderTable
           orders={state.orders.filter((order) => order.buyer === user?.id)}
         />
+      </Card>
+      <Card>
+        <h2>کوپن‌های من</h2>
+        <p>هر کوپن یک‌بار برای پذیرندهٔ مجاز قابل ثبت است.</p>
+        {coupons.length ? (
+          <div className="grid-two">
+            {coupons.map((coupon) => (
+              <CouponCard key={coupon.id} coupon={coupon} />
+            ))}
+          </div>
+        ) : (
+          <Empty>هنوز کوپنی ندارید.</Empty>
+        )}
       </Card>
       {checkout && (
         <Modal title="پرداخت آزمایشی" onClose={() => setCheckout(false)}>
@@ -485,6 +517,7 @@ export function Products({ user }: { user: User }) {
                   price: number(d, 'price'),
                   stock: number(d, 'stock'),
                   topup: selected?.topup,
+                  coupon: selected?.coupon,
                 },
               });
               setOpen(false);
@@ -636,7 +669,6 @@ export function Audit() {
               send({
                 type: 'settings',
                 rate: number(d, 'rate'),
-                cap: number(d, 'cap'),
               });
             }}
           >
@@ -647,16 +679,6 @@ export function Audit() {
                 min={1}
                 name="rate"
                 defaultValue={state.rate}
-                required
-              />
-            </label>
-            <label>
-              سقف برداشت کارا در ماه شمسی
-              <input
-                type="number"
-                min={0}
-                name="cap"
-                defaultValue={state.cap}
                 required
               />
             </label>

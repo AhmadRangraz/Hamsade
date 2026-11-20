@@ -16,6 +16,8 @@ const activityXp: Record<CivicActivity, number> = {
   qualityConfirmed: 10,
   courseCompleted: 20,
   surveyAnswered: 10,
+  eventAttended: 20,
+  issueSolved: 30,
 };
 
 export const activityLabels: Record<ProgressEntry['event'], string> = {
@@ -25,6 +27,8 @@ export const activityLabels: Record<ProgressEntry['event'], string> = {
   qualityConfirmed: 'تأیید کیفیت از سوی شهروند',
   courseCompleted: 'تکمیل دورهٔ آموزشی',
   surveyAnswered: 'پاسخ به نظرسنجی محله',
+  eventAttended: 'حضور تأییدشده در رویداد',
+  issueSolved: 'رفع تأییدشدهٔ مسئلهٔ محله',
   weeklyQuest: 'پاداش چالش هفتگی',
   civicMission: 'پاداش مأموریت از گزارش تا نتیجه',
 };

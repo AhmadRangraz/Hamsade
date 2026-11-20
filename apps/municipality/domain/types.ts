@@ -11,7 +11,8 @@ export type Permission =
   | 'case'
   | 'weights'
   | 'checkout'
-  | 'withdraw'
+  | 'eventAttendance'
+  | 'redeemCoupon'
   | 'product'
   | 'settle'
   | 'course'
@@ -39,7 +40,7 @@ export type Score = { revision: Revision; values: [number, number, number] };
 export type Project = {
   worker: Role;
   inspector: Role;
-  method: 'internal' | 'direct' | 'tender';
+  method: 'internal' | 'direct' | 'tender' | 'volunteer';
   price: number;
 };
 export type Inspection = {
@@ -50,6 +51,7 @@ export type Inspection = {
   photo: string;
 };
 export type Attachment = { name: string; data: string };
+export type MediaRef = { id: string; mime: string; name: string; size: number };
 export type CivicCase = {
   id: string;
   kind: 'report' | 'idea';
@@ -62,6 +64,12 @@ export type CivicCase = {
   date: string;
   photo: string;
   status: Status;
+  media?: MediaRef;
+  volunteer?: {
+    reward: number;
+    task?: string;
+    proof?: { media: MediaRef; note: string };
+  };
   score?: Score;
   project?: Project;
   inspections: Inspection[];
@@ -85,6 +93,7 @@ export type Transaction = {
   at: string;
   label: string;
 };
+export type CouponKind = 'parking' | 'shahrvand';
 export type Product = {
   id: string;
   name: string;
@@ -95,6 +104,7 @@ export type Product = {
   vendor: Role;
   district: string;
   topup?: number;
+  coupon?: CouponKind;
 };
 export type Order = {
   id: string;
@@ -105,6 +115,12 @@ export type Order = {
   rate: number;
   at: string;
   settledAt?: string;
+};
+export type CouponUse = { couponId: string; location: string; at: string };
+export type EventAttendance = {
+  event: string;
+  citizen: Role;
+  approvedAt?: string;
 };
 export type Course = {
   id: string;
@@ -131,7 +147,9 @@ export type CivicActivity =
   | 'caseVoted'
   | 'qualityConfirmed'
   | 'courseCompleted'
-  | 'surveyAnswered';
+  | 'surveyAnswered'
+  | 'eventAttended'
+  | 'issueSolved';
 export type ProgressEntry = {
   citizen: Role;
   event: CivicActivity | 'weeklyQuest' | 'civicMission';
@@ -149,7 +167,8 @@ export type State = {
   courses: Course[];
   attendance: Attendance[];
   rate: number;
-  cap: number;
+  couponsUsed?: CouponUse[];
+  eventAttendance?: EventAttendance[];
   categories: string[];
   fraud: { id: string; note: string; reviewed: boolean }[];
   imports: string[];

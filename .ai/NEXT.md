@@ -30,3 +30,7 @@ Verify the hosted release run for the commit being reviewed and record the nativ
 The mock municipality starts with `pnpm dev` on port 3001. The [stakeholder walkthrough](../docs/MUNICIPALITY.md#stakeholder-walkthrough) covers persona handoffs and reset. Any further production milestone starts with verified identity, server-side permission enforcement, secure file storage and a protected ledger. Real municipal integrations need separate authorization and contracts.
 
 Citizen progression is available from the home dashboard. In a production implementation, write trusted civic XP events and source keys in the same server-side transaction as the municipal decision. Handle leaderboard consent server-side before introducing real peers.
+
+## Karashahr integration boundary
+
+The main personas operate in District 2, Area 5. To activate real coupons, obtain the authorized Shahrvand and parking partners, verified tariffs, and redemption interface. Volunteer and event reward decisions remain in the browser-local demo until a verified backend is introduced.

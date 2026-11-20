@@ -1,4 +1,4 @@
-# Participatory Municipality
+# Karashahr · کاراشهر
 
 A fictional municipality demonstrates community reporting, district triage, execution, inspection and local Cara incentives. FORGE's SaaS/Admin conventions provide an RTL application shell, shared UI primitives and Persian formatting. The municipality is an isolated Next.js workspace with Tailwind and strict TypeScript. It does not resolve a FORGE account or call its API.
 
@@ -48,7 +48,7 @@ Everyone can access profile, notifications, search and transparency after choosi
 
 The login screen lists seven fictional personas. Use its role switcher in the same browser tab to share the evolving snapshot between personas. The role, data, and senior-mode preference survive refresh. From **تنظیمات و پروفایل**, choose **بازنشانی داده‌های نمایشی** and confirm to restore the initial snapshot. Export and multi-tab synchronization are outside the demo. Avoid entering real personal information.
 
-`fixtures.json` supplies people, districts, locations, products, courses, notices and events. `data.ts` adds linked cases, sample inspections, versioned scores, attendance, ledger and orders. The operating personas represent District 1. District 2 supplies city-wide reporting and district isolation examples. [ASSUMPTION] Roles have a baseline route matrix, and HQ can activate or deactivate a persona and suspend individual actions within the baseline permission matrix. A suspended action is rejected at the command boundary while read access remains available.
+`fixtures.json` supplies people, districts, locations, products, courses, notices and events. `data.ts` adds linked cases, sample inspections, versioned scores, attendance, ledger and orders. The operating personas represent District 2, Area 5. Area 4 supplies a separate comparison and access-scope example. [ASSUMPTION] Roles have a baseline route matrix, and HQ can activate or deactivate a persona and suspend individual actions within the baseline permission matrix. A suspended action is rejected at the command boundary while read access remains available.
 
 The app uses Vazirmatn, responsive dashboard and card grids, and semantic colors in `app/globals.css`. Base text is 15px, forms use 44px controls, and senior mode raises text and principal controls. The FORGE primitives provide buttons, cards and notices. Municipal components add status badges, score and wallet widgets, a calendar picker, accessible tables, a native modal and live feedback. Document RTL applies to login and all workspaces, and identifiers and codes use bidi isolation.
 
@@ -70,19 +70,19 @@ Report and idea records retain their kind throughout. The demo uses the same exe
 
 Each priority score is `sum(raw × weight) ÷ 100`. Raw values and integer percentages are bounded from zero to 100. The weights must total 100. District-specific revisions take precedence over the city default. Existing cases retain the exact revision and inputs that were used. Public transparency shows only district, category, date, state and score, and omits locations, descriptions, media, and operational notes. The case detail has additional viewer-specific disclosure.
 
-Civil dates use ISO YYYY-MM-DD values and audit timestamps use UTC. The interface converts user dates with `jalaali-js`, accepts Persian and Arabic digits, and displays dates in the Jalali calendar. The calendar uses Asia/Tehran day boundaries for monthly caps.
+Civil dates use ISO YYYY-MM-DD values and audit timestamps use UTC. The interface converts user dates with `jalaali-js`, accepts Persian and Arabic digits, and displays dates in the Jalali calendar. The calendar uses Asia/Tehran day boundaries for event attendance and weekly progression.
 
 ## Cara, education and mock sync
 
-- The default rate is 1,000 toman per Cara and the default cap is 150 Cara per Jalali month. Ledger balances are summed from integer entries. Checkouts snapshot the rate and use at most floor(eligible toman subtotal ÷ rate) Cara. Top-ups require simulated toman payment and are excluded from the Cara-payable subtotal. Vendor settlement converts the Cara portion using the order's historical rate.
+- The demo conversion rate is 1,000 toman per Cara. Citizens spend Cara on purchases. Ledger balances are summed from integer entries. Checkouts snapshot the rate and use at most floor(eligible toman subtotal ÷ rate) Cara. Top-ups require simulated toman payment and are excluded from the Cara-payable subtotal. Vendor settlement converts the Cara portion using the order's historical rate.
 - Checkout validates stock and payable balance together. Successful retries return the original order. Training allows a single payout per course and participant after approved attendance and a passed quiz. A rendered QR encodes the same payload accepted by the attendance input. The manual code works independently of the QR. Course player content is local text.
 - `137-8001` is owned by the mock source until import. After import, the district owns status and assignment. Fixture GIS provides district-specific selectable locations with a keyboard-friendly dropdown, without live maps or coordinates. `TOLL-502` creates an eligible simulated payment reward. `PARK-304` is informational. External IDs are deduplicated. A simulated sync failure records no imported ID and can be retried. HQ can review duplicate attempts as fraud flags.
-- Report and inspection images and supporting execution attachments stay in the browser snapshot. Execution attachments are downloadable from the permitted timeline. Files are limited to 350 KB. Production needs secure file upload and authorized retrieval.
+- Report media and volunteer proof support JPEG, PNG, WebP, MP4 and WebM up to 20 MiB per file. IndexedDB stores their blobs in the demo browser. The case snapshot stores media references. Inspection images and contractor attachments retain their 350 KB limit and remain available to permitted roles.
 
 ## Stakeholder walkthrough
 
 1. Run `pnpm install --frozen-lockfile` and `pnpm dev` from Hamsade with Node 24 and pnpm 11.25.0. Open `http://localhost:3001/`.
-2. Choose **شهروند** and **ثبت گزارش جدید**. Enter a title and description, choose a fixture pin in District 1, select a Jalali date, and submit. Open **مشاهدهٔ پرونده** and note the case ID.
+2. Choose **شهروند** and **ثبت گزارش جدید**. Enter a title and description, choose a fixture pin in District 2, Area 5, select a Jalali date, and submit. Open **مشاهدهٔ پرونده** and note the case ID.
 3. Return to login through **خروج و تغییر نقش**. Choose **مدیر منطقه**, open **گزارش‌ها و پیشنهادها** and the new case. Evaluate it, view the score breakdown, and assign it with a reason using **قرارداد قیمت مستقیم**.
 4. Choose **پیمانکار** and open the same case under **پروژه‌ها و قراردادها**. Record progress and send it for inspection.
 5. Choose **بازرس کیفیت**, open the case in **صف بازرسی**, fill in the inspection, and request rework. Switch back to contractor, record the fix, and return it to the inspector. Approve the second inspection.
@@ -94,7 +94,7 @@ Civil dates use ISO YYYY-MM-DD values and audit timestamps use UTC. The interfac
 
 Use `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` and `pnpm build`. After building, run `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium pnpm test:e2e --workers=1` where that browser path exists, or install Playwright Chromium and omit the override. The browser runner starts the production app on port 3001.
 
-For a launch, replace the persona picker with verified identity and server-enforced roles, use a transactional and protected financial ledger, secure media and evidence, and implement municipal data retention, privacy and auditing requirements. Integrations, conversions, tenders, settlements and withdrawals in this repository are demonstrations. Default fixtures cover the main demo lifecycle rather than representing actual municipal records.
+For a launch, replace the persona picker with verified identity and server-enforced roles, use a transactional and protected financial ledger, secure media and evidence, and implement municipal data retention, privacy and auditing requirements. Integrations, conversions, tenders and settlements in this repository are demonstrations. Default fixtures cover the main demo lifecycle rather than representing actual municipal records.
 
 ### Observed checks
 
@@ -105,7 +105,7 @@ For a launch, replace the persona picker with verified identity and server-enfor
 
 ## Citizen progression from FORGE
 
-The citizen dashboard links to **پیشرفت مشارکت**. The shared FORGE progression code in `packages/config/src/progression.ts` supplies level thresholds, ordered mission steps, badge prerequisites, streaks and Saturday-based weeks. The original FORGE API and the Hamsade demo both use these rules. Hamsade applies them to its own civic actions through a browser-local adapter.
+The citizen dashboard links to **پیشرفت مشارکت**. The shared FORGE progression code in `packages/config/src/progression.ts` supplies level thresholds, ordered mission steps, badge prerequisites, streaks and Saturday-based weeks. The original FORGE API and Karashahr both use these rules. Karashahr applies them to its own civic actions through a browser-local adapter.
 
 | Qualifying action                                              | Experience points |
 | -------------------------------------------------------------- | ----------------: |
@@ -115,7 +115,19 @@ The citizen dashboard links to **پیشرفت مشارکت**. The shared FORGE p
 | Citizen confirms the quality of approved work                  |                10 |
 | Citizen passes the quiz and the instructor approves attendance |                20 |
 | Citizen answers the neighborhood survey                        |                10 |
+| District verifies attendance at a neighborhood event           |                20 |
+| Inspector approves a volunteer’s proof of resolution           |                30 |
 
 Two qualifying actions in one Tehran week award a 15-XP bonus once per week. The report-to-result mission awards 25 XP once after the citizen confirms the outcome of a report that earned validation XP. A source can earn its base XP once per event kind. XP tracks participation. Cara continues to cover purchases and simulated financial transactions. Buying or reloading Cara earns zero XP.
 
 Existing browser records and Cara balances are kept. Progress accrues from qualifying actions after this update. The sample leaderboard uses fictional peers and displays the citizen's own row only with local opt-in. No scores are shared with other browsers.
+
+## Karashahr neighborhood walkthrough
+
+The brand slogan is **از گزارش تا نتیجه، با هم.** The citizen dashboard shows **مسائل محلهٔ من** next to **گزارش‌های من**. Both views link to case details with state-based progress bars. Area 5 is the default location, and the map uses illustrative pins.
+
+- Open the seeded cleanup report `M-1050` as **شهروند**, accept the task, and submit a description and photo or video. The **بازرس کیفیت** checks the proof and can request corrections or approve it. Approval adds 30 Cara and 30 XP once. District managers can make reviewed waste or greenspace reports available with a scoped, low-risk task description.
+- Join a neighborhood event as **شهروند**. The **مدیر منطقه** can verify attendance starting on the event's local date. Verified attendance adds 20 XP once. **آموزش شهروندی** includes a civilian emergency lesson for wartime with preparation, shelter, official evacuation guidance and safe reporting.
+- The shop offers a 500,000-toman Shahrvand voucher and 100,000-toman parking credit as configurable demo amounts. Use a purchased voucher once through **کوپن‌های من** at an allowed sample acceptor. The visible prices are illustrative. Access to the municipal and Shahrvand websites returned HTTP 403 during this update, so official tariffs and actual partner contracts are unverified. Live redemption requires the authorized partner list, current prices and provider transaction API.
+- **شفافیت شهری** shows the leading citizen by XP among fictional peers and eligible opt-in participation. It shows the top area by number of resolved and approved reports. The public view displays an alias for the citizen and keeps proof media on case screens.
+- Updated demo snapshots preserve the Cara ledger, prior orders, custom prices and stock. The prior citizen withdrawal route has been retired. Existing ledger entries remain visible as historical transactions.

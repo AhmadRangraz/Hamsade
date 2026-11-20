@@ -9,10 +9,11 @@ import {
   type ReactNode,
 } from 'react';
 import { execute, type Command } from '../domain/commands';
-import { seed, users } from '../domain/data';
+import { restoreDemo, seed, users } from '../domain/data';
 import type { Role, State } from '../domain/types';
 
-const storageKey = 'hamsade-demo-v2';
+const storageKey = 'hamsade-demo-v3';
+const priorStorageKey = 'hamsade-demo-v2';
 type Session = {
   data: State;
   role: Role | null;
@@ -72,14 +73,17 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let snapshot = initial();
     try {
-      const stored = localStorage.getItem(storageKey);
+      const current = localStorage.getItem(storageKey);
+      const stored = current ?? localStorage.getItem(priorStorageKey);
       if (stored) {
         const parsed = JSON.parse(stored) as Session;
         if (
           Array.isArray(parsed.data?.cases) &&
           Array.isArray(parsed.data?.disabled)
         )
-          snapshot = parsed;
+          snapshot = current
+            ? parsed
+            : { ...parsed, data: restoreDemo(parsed.data) };
       }
     } catch {
       /* A corrupt or unavailable snapshot falls back to fixtures. */
@@ -93,6 +97,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         storageKey,
         JSON.stringify({ ...session, message: undefined }),
       );
+      localStorage.removeItem(priorStorageKey);
       setStorageError(false);
     } catch {
       setStorageError(true);

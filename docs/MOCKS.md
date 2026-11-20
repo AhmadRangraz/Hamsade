@@ -32,3 +32,7 @@ Enable gamification, configure a mock catalog item and sign in with a fake accou
 ## Local assistant
 
 Generate the `ai` preset or enable `features.assistant`. Register a fake account, create a conversation, and send the sample planning prompt. The local provider emits Persian text fragments and a final structured topic. Reload the conversation to verify its private history. The provider runs inside Nest and requires no network access or API key. [Assistant API](API.md#presets)
+
+## Karashahr coupon acceptors
+
+Coupon orders provide one redemption per purchased unit. The citizen chooses a permitted demo parking or Shahrvand acceptor and records a simulated use. The local ledger checks ownership and prevents reuse. Fixture acceptors and prices are illustrative. See [the walkthrough](MUNICIPALITY.md#karashahr-neighborhood-walkthrough).

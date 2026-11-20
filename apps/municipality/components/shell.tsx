@@ -42,6 +42,7 @@ import {
 } from '../domain/access';
 import { balance, totalScore } from '../domain/commands';
 import {
+  brand,
   districtName,
   districts,
   notices,
@@ -49,6 +50,8 @@ import {
   statusLabel,
   users,
 } from '../domain/data';
+import { topDistrict } from '../domain/neighborhood';
+import { civicProgress, rankDemoCitizen } from '../domain/progression';
 import type { Role, State, User } from '../domain/types';
 import { useDemo } from './state';
 import {
@@ -66,7 +69,14 @@ import {
   money,
   num,
 } from './ui';
-import { CaseList, CasePage, SubmitCase } from './civic';
+import {
+  CaseList,
+  CasePage,
+  NeighborhoodPanel,
+  ReportProgress,
+  SubmitCase,
+} from './civic';
+import { clearMedia } from './media';
 import { Audit, Products, Scoring, Shop, WalletPage } from './economy';
 import { Community, Courses, Training } from './participation';
 import { ProgressPage, ProgressSummary } from './progression';
@@ -162,7 +172,7 @@ function Brand() {
         <Building2 size={23} />
       </span>
       <span>
-        <strong>همساده</strong>
+        <strong>{brand.name}</strong>
         <small>شهرداری مشارکتی</small>
       </span>
     </Link>
@@ -210,19 +220,15 @@ export function Login() {
           <div className="hero-eyebrow">
             <MapPin size={17} /> شهر از محله شروع می‌شود
           </div>
-          <h1>
-            شهری که
-            <br />
-            با هم می‌سازیم<span>.</span>
-          </h1>
+          <h1>{brand.slogan}</h1>
           <p>
-            همساده، فضای مشترک شهروندان و شهرداری برای ثبت گزارش، پیگیری کارها و
-            بهبود محله است.
+            {brand.name}، فضای مشترک شهروندان و شهرداری برای ثبت گزارش، پیگیری
+            کارها و بهبود محله است.
           </p>
           <CityGraphic />
         </div>
         <Card className="login-card">
-          <h2>ورود به همساده</h2>
+          <h2>ورود به {brand.name}</h2>
           <p className="muted">
             برای دیدن پیشخوان، یک نقش آزمایشی انتخاب کنید.
           </p>
@@ -368,7 +374,7 @@ export function Desk({
   if (!session.ready)
     return (
       <main className="loading" aria-live="polite">
-        در حال بارگذاری همساده…
+        در حال بارگذاری {brand.name}…
       </main>
     );
   return (
@@ -428,7 +434,7 @@ export function Desk({
             </header>
             <main id="main" tabIndex={-1} className="page-content">
               <div className="breadcrumb">
-                <Link href={href('home')}>همساده</Link>
+                <Link href={href('home')}>{brand.name}</Link>
                 <ChevronLeft size={13} />
                 <span>{routes[section as Section]}</span>
               </div>
@@ -439,7 +445,8 @@ export function Desk({
               />
             </main>
             <footer className="desk-footer">
-              همساده · شهرداری مشارکتی<span>خدمات و تراکنش‌های آزمایشی</span>
+              {brand.name} · {brand.slogan}
+              <span>خدمات و تراکنش‌های آزمایشی</span>
             </footer>
           </div>
           {session.message && (
@@ -560,7 +567,7 @@ function Dashboard({ user }: { user: User }) {
               </small>
             </Link>,
             date(record.date),
-            <Badge key="status" status={record.status} />,
+            <ReportProgress key="status" record={record} />,
           ]);
   return (
     <>
@@ -571,7 +578,7 @@ function Dashboard({ user }: { user: User }) {
             : routes.home + ' ' + roleLabel[user.role]
         }
       >
-        سلام {session.name || user.name}، به همساده خوش آمدید.
+        سلام {session.name || user.name}، به {brand.name} خوش آمدید.
       </Heading>
       <section className="dashboard-hero">
         <div className="hero-copy">
@@ -665,28 +672,32 @@ function Dashboard({ user }: { user: User }) {
             rows={rows}
           />
         </Card>
-        <Card>
-          <div className="section-head">
-            <h2>دسترسی سریع</h2>
-          </div>
-          <div className="quick-links">
-            {(actions.length
-              ? actions
-              : (['wallet', 'notices', 'transparency'] as Section[])
-            ).map((item) => {
-              const Icon = icons[item];
-              return (
-                <Link href={href(item)} key={item}>
-                  <span className="mini-icon">
-                    <Icon size={19} />
-                  </span>
-                  <strong>{routes[item]}</strong>
-                  <More />
-                </Link>
-              );
-            })}
-          </div>
-        </Card>
+        {user.role === 'citizen' ? (
+          <NeighborhoodPanel user={user} />
+        ) : (
+          <Card>
+            <div className="section-head">
+              <h2>دسترسی سریع</h2>
+            </div>
+            <div className="quick-links">
+              {(actions.length
+                ? actions
+                : (['wallet', 'notices', 'transparency'] as Section[])
+              ).map((item) => {
+                const Icon = icons[item];
+                return (
+                  <Link href={href(item)} key={item}>
+                    <span className="mini-icon">
+                      <Icon size={19} />
+                    </span>
+                    <strong>{routes[item]}</strong>
+                    <More />
+                  </Link>
+                );
+              })}
+            </div>
+          </Card>
+        )}
       </div>
       {user.role === 'hq' && (
         <Card>
@@ -823,7 +834,8 @@ function Profile({ user }: { user: User }) {
           <p>همهٔ تغییرات این مرورگر پاک می‌شود و نمونه‌های اولیه بازمی‌گردد.</p>
           <Button
             tone="danger"
-            onClick={() => {
+            onClick={async () => {
+              await clearMedia().catch(() => undefined);
               dispatch({ type: 'reset' });
               router.push('/');
             }}
@@ -857,11 +869,46 @@ export function PublicTransparency() {
 
 function Transparency() {
   const { state } = useDemo();
+  const leader = rankDemoCitizen(
+    civicProgress(state, new Date().toISOString()),
+  )[0];
+  const district = topDistrict(state);
   return (
     <>
       <Heading title="شفافیت شهری">
         آمار و وضعیت عمومی پرونده‌ها در سطح منطقه.
       </Heading>
+      <div className="grid-two">
+        <Card>
+          <h2>شهروند برتر</h2>
+          {leader && (
+            <>
+              <strong>
+                {leader.id === 'citizen' ? 'شهروند کاراشهر' : leader.name}
+              </strong>
+              <p>{num(leader.xp)} امتیاز تجربه</p>
+            </>
+          )}
+          <p className="muted">
+            جدول نمایشی با داده‌های نمونه. جایگاه شهروند با رضایت او و بدون نام
+            شخصی نشان داده می‌شود.
+          </p>
+        </Card>
+        <Card>
+          <h2>ناحیهٔ برتر</h2>
+          {district?.resolved ? (
+            <>
+              <strong>{district.name}</strong>
+              <p>{num(district.resolved)} گزارش رفع‌شده و تأییدشده</p>
+            </>
+          ) : (
+            <Empty>هنوز گزارشی تأیید نشده است.</Empty>
+          )}
+          <p className="muted">
+            معیار رتبه تعداد گزارش‌های رفع‌شده و تأییدشده است.
+          </p>
+        </Card>
+      </div>
       <div className="grid-two">
         {districts.map((district) => {
           const list = state.cases.filter((c) => c.district === district.id);
@@ -973,7 +1020,7 @@ function Workspace({
     case 'courses':
       return <Courses user={user} />;
     case 'community':
-      return <Community />;
+      return <Community user={user} />;
     case 'scoring':
       return <Scoring user={user} />;
     case 'audit':

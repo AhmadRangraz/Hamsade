@@ -1,7 +1,13 @@
 {
   "districts": [
-    { "id": "north", "name": "منطقه ۱ · بهارستان" },
-    { "id": "south", "name": "منطقه ۲ · نارون" }
+    {
+      "id": "north",
+      "name": "منطقه ۲، ناحیه ۵"
+    },
+    {
+      "id": "south",
+      "name": "منطقه ۲، ناحیه ۴"
+    }
   ],
   "users": [
     {
@@ -22,7 +28,12 @@
       "name": "مریم کریمی",
       "district": "north"
     },
-    { "id": "hq", "role": "hq", "name": "لیلا امینی", "district": "city" },
+    {
+      "id": "hq",
+      "role": "hq",
+      "name": "لیلا امینی",
+      "district": "city"
+    },
     {
       "id": "contractor",
       "role": "contractor",
@@ -52,37 +63,45 @@
       "title": "نتیجهٔ بررسی مسیر بوستان سپید",
       "text": "بازرسی انجام شده و نتیجه برای شهروندان قابل مشاهده است."
     },
-    { "title": "کارگاه ایمنی محله", "text": "ثبت حضور در بخش آموزش باز است." }
+    {
+      "title": "کارگاه ایمنی محله",
+      "text": "ثبت حضور در بخش آموزش باز است."
+    }
   ],
   "events": [
     {
       "name": "پاکسازی داوطلبانهٔ محله",
-      "date": "2026-11-25",
-      "venue": "بوستان سپید"
+      "date": "2026-11-20",
+      "venue": "بوستان سپید",
+      "id": "park-cleanup",
+      "district": "north"
     },
     {
       "name": "گردهمایی همسایه‌ها",
       "date": "2026-12-03",
-      "venue": "خانهٔ محلهٔ آفتاب"
+      "venue": "خانهٔ محلهٔ ناحیه ۵",
+      "id": "neighbors-meet",
+      "district": "north"
     }
   ],
   "products": [
     {
       "id": "parking",
-      "name": "کوپن پارکینگ عمومی",
+      "name": "کوپن پارکینگ طرف قرارداد",
       "kind": "digital",
       "icon": "parking",
-      "price": 40000,
+      "price": 100000,
       "stock": 12,
       "vendor": "vendor",
-      "district": "north"
+      "district": "north",
+      "coupon": "parking"
     },
     {
       "id": "traffic",
       "name": "مجوز طرح ترافیک",
       "kind": "digital",
       "icon": "ticket",
-      "price": 85000,
+      "price": 185000,
       "stock": 10,
       "vendor": "vendor",
       "district": "north"
@@ -92,7 +111,7 @@
       "name": "شارژ کپسول آتش‌نشانی",
       "kind": "digital",
       "icon": "shield",
-      "price": 70000,
+      "price": 425000,
       "stock": 8,
       "vendor": "vendor",
       "district": "north"
@@ -113,7 +132,7 @@
       "name": "بلیت خانهٔ فرهنگ",
       "kind": "digital",
       "icon": "ticket",
-      "price": 30000,
+      "price": 120000,
       "stock": 18,
       "vendor": "vendor",
       "district": "north"
@@ -123,7 +142,7 @@
       "name": "اشتراک کتابخانهٔ محله",
       "kind": "digital",
       "icon": "book",
-      "price": 55000,
+      "price": 95000,
       "stock": 15,
       "vendor": "vendor",
       "district": "south"
@@ -133,7 +152,7 @@
       "name": "بستهٔ ایمنی منزل",
       "kind": "physical",
       "icon": "shield",
-      "price": 125000,
+      "price": 985000,
       "stock": 7,
       "vendor": "vendor",
       "district": "north"
@@ -143,10 +162,21 @@
       "name": "نهال انار",
       "kind": "physical",
       "icon": "leaf",
-      "price": 65000,
+      "price": 275000,
       "stock": 14,
       "vendor": "vendor",
       "district": "south"
+    },
+    {
+      "id": "shahrvand",
+      "name": "کوپن خرید فروشگاه شهروند",
+      "kind": "digital",
+      "icon": "ticket",
+      "price": 500000,
+      "stock": 20,
+      "vendor": "vendor",
+      "district": "north",
+      "coupon": "shahrvand"
     }
   ],
   "courses": [
@@ -156,7 +186,7 @@
       "mode": "local",
       "instructor": "instructor",
       "district": "north",
-      "venue": "خانهٔ محلهٔ بهارستان",
+      "venue": "خانهٔ محلهٔ ناحیه ۵",
       "date": "2026-11-26",
       "code": "1374",
       "reward": 25,
@@ -173,6 +203,18 @@
       "code": "2486",
       "reward": 15,
       "lesson": "پسماند خشک و تمیز را از پسماند تر جدا کنید. شیشه و کاغذ را در ظرف‌های مخصوص بگذارید."
+    },
+    {
+      "id": "civil-emergency",
+      "title": "در زمان جنگ چه کار کنیم؟",
+      "mode": "online",
+      "instructor": "instructor",
+      "district": "north",
+      "venue": "راهنمای ایمنی غیرنظامیان",
+      "date": "2026-11-20",
+      "code": "5412",
+      "reward": 15,
+      "lesson": "هشدارها و دستورهای امدادی را از منابع رسمی دنبال کنید و خبرهای تأییدنشده را بازنشر نکنید. در صورت اعلام خطر، به محل امن اعلام‌شده بروید و از پنجره‌ها و شیشه‌ها فاصله بگیرید. آب، داروهای ضروری، چراغ‌قوه، پاوربانک و نسخه‌ای از مدارک را آماده داشته باشید و یک روش تماس خانوادگی تعیین کنید. در تخلیهٔ اضطراری از مسیرهای اعلام‌شده استفاده کنید و اگر امکان دارد به افراد نیازمند کمک همراهی بدهید. به بقایای مشکوک دست نزنید، از محل دور شوید و موضوع را به مسئولان امدادی اطلاع دهید."
     }
   ]
 }
