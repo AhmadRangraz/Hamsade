@@ -101,3 +101,7 @@ Compatibility references reviewed before installing dependencies included the of
 - Import the FORGE baseline into Hamsade. Keep municipal pages in an independent Next.js workspace and reuse the original shared UI and locale formatting.
 - Let the browser demo own typed fixtures, the role picker, transitions and the Cara ledger. Store ISO dates and UTC timestamps with Jalali display and Tehran calendar boundaries.
 - Keep the original API-backed boilerplate available through the `forge:*` commands. See [municipal decisions and assumptions](../docs/MUNICIPALITY.md).
+
+## Citizen progression
+
+Share FORGE's pure progression rules with Hamsade. Keep municipal event eligibility in the mock command boundary and deduplicate by citizen, action and source. The progression ledger holds XP separately from Cara. The neighborhood ranking is a local, opt-in comparison against fictional peers.

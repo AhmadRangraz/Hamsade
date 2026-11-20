@@ -40,3 +40,9 @@ Recheck native PWA installation on the hosted runner for each release. The manag
 ## Hamsade municipality demo
 
 The Hamsade checkout contains the FORGE baseline plus an independent mock municipality app. A clean startup, nine municipal domain tests, five production Chromium tests, lint, formatting, type checking and the production build passed. The copied FORGE unit suite passed 15 tests. See [validation and demo steps](../docs/MUNICIPALITY.md#observed-checks).
+
+## Shared FORGE progression in Hamsade
+
+The Hamsade baseline imports FORGE commit `6b085ae9cb391f6eab28052fd6d5b0a35b82cf1b`. Both apps now call the same progression rules. Hamsade adds browser-local civic XP, levels, badge prerequisites, streaks, a weekly quest, a report-to-result mission, and opt-in sample standings.
+
+Verified repository lint and formatting, Hamsade type checking and production build, all 15 Hamsade unit tests, all six Hamsade Chromium tests, and all 15 original FORGE unit tests. The original NestJS API integration check could not start because Prisma's verified engine download returned HTTP 403.

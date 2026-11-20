@@ -11,6 +11,7 @@ async function login(page: Page, role: string) {
 test('citizen to district to contractor to inspector with rework', async ({
   page,
 }) => {
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00Z'));
   await login(page, 'شهروند');
   await page.getByRole('link', { name: 'ثبت گزارش جدید' }).click();
   await page.getByLabel('عنوان', { exact: true }).fill('آزمون روشنایی محله');
@@ -96,6 +97,18 @@ test('citizen to district to contractor to inspector with rework', async ({
   await page.getByRole('button', { name: 'تأیید کیفیت از سوی شهروند' }).click();
   await expect(
     page.getByText('کیفیت تأیید شد', { exact: false }),
+  ).toBeVisible();
+  await page.goto('/desk/progress');
+  await expect(
+    page.getByText('۷۵ امتیاز تجربه', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('چالش تکمیل شد', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('پاداش مأموریت از گزارش تا نتیجه', { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByText('۷۵ امتیاز تجربه', { exact: true }),
   ).toBeVisible();
   await page.goto('/desk/wallet');
   await expect(page.getByText('اعتبار گزارش معتبر')).toBeVisible();
@@ -262,4 +275,36 @@ test('HQ can scope access and search stays within the municipality app', async (
     page.getByRole('link', { name: 'روشنایی خیابان آبان' }),
   ).toBeVisible();
   expect(serviceRequests).toEqual([]);
+});
+
+test('progress is discoverable and demo ranking consent persists', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 820 });
+  await login(page, 'شهروند');
+  await page.getByRole('link', { name: 'مشاهدهٔ نشان‌ها و مأموریت‌ها' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'پیشرفت مشارکت', exact: true }),
+  ).toBeVisible();
+  const preference = page.getByRole('checkbox', {
+    name: 'نمایش جایگاه من در جدول نمونه',
+  });
+  const ownRow = page.getByRole('cell', { name: 'شما', exact: true });
+  await expect(preference).not.toBeChecked();
+  await expect(ownRow).toHaveCount(0);
+  await preference.check();
+  await expect(ownRow).toBeVisible();
+  await page.reload();
+  await expect(preference).toBeChecked();
+  await preference.uncheck();
+  await expect(ownRow).toHaveCount(0);
+  const failures = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(failures.violations).toEqual([]);
+  await login(page, 'فروشنده');
+  await page.goto('/desk/progress');
+  await expect(
+    page.getByRole('heading', { name: 'دسترسی به این بخش محدود است' }),
+  ).toBeVisible();
 });

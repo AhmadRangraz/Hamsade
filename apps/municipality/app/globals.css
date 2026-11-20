@@ -1388,3 +1388,44 @@ dialog::backdrop {
 .login-footer .public-link {
   margin-inline-start: auto;
 }
+
+.progression-summary {
+  display: flex;
+  align-items: start;
+  gap: 14px;
+}
+
+.progression-summary > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.progression-meter {
+  margin-block: 10px;
+}
+
+.progression-meter .section-head {
+  flex-wrap: wrap;
+  margin-block-end: 0;
+}
+
+.progression-meter progress,
+.progression-bar {
+  display: block;
+  width: 100%;
+  accent-color: var(--primary);
+  margin-block: 7px;
+}
+
+.progression-steps {
+  display: grid;
+  gap: 8px;
+}
+
+.progression-steps li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}

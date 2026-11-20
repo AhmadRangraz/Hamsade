@@ -14,7 +14,7 @@
     "lint": "eslint apps/municipality",
     "format": "prettier --write .",
     "format:check": "prettier --check apps/municipality docs",
-    "test": "vitest run --config vitest.municipality.config.mjs",
+    "test": "pnpm build:shared && vitest run --config vitest.municipality.config.mjs",
     "test:e2e": "playwright test --config playwright.municipality.config.ts",
     "db:up": "docker compose up -d --wait db",
     "db:migrate": "pnpm --filter @forge/api db:migrate",

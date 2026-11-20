@@ -1,7 +1,7 @@
-import { forgeConfig } from '@forge/config';
+import { forgeConfig, questOccurrence } from '@forge/config';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { BusinessEvent } from './award.js';
-import { periodStart } from './calendar.js';
+export { questOccurrence } from '@forge/config';
 
 export function questWindowStatus(
   quest: { startsAt: string; endsAt: string },
@@ -10,13 +10,6 @@ export function questWindowStatus(
   if (now < Date.parse(quest.startsAt)) return 'UPCOMING';
   if (now >= Date.parse(quest.endsAt)) return 'EXPIRED';
   return 'ACTIVE';
-}
-
-export function questOccurrence(
-  cadence: 'once' | 'daily' | 'weekly',
-  day: string,
-) {
-  return cadence === 'once' ? 'once' : periodStart(cadence, day)!;
 }
 
 export async function recordQuestProgress(

@@ -22,3 +22,15 @@ export function formatJalaliDate(value: Date, config = forgeConfig): string {
     dateStyle: 'long',
   }).format(value);
 }
+
+export {
+  advanceMission,
+  badgeProgress,
+  levelIndex,
+  localDay,
+  periodStart,
+  questOccurrence,
+  shiftDay,
+  streaks,
+} from '@forge/config';
+export const forgeLevelThresholds = forgeConfig.gamification.levelThresholds;

@@ -15,3 +15,5 @@ M10 adds the deployment smoke command and a local PostgreSQL backup and recovery
 ## Hamsade handoff
 
 Use `pnpm install --frozen-lockfile` and `pnpm dev` from Hamsade. The demo starts on port 3001 with fictional data and browser persistence. Review [the municipality guide](../docs/MUNICIPALITY.md) for demo steps, assumptions and the production boundary. The imported FORGE apps retain their own setup commands.
+
+For the progression demo, validate a citizen report as district admin, approve execution after inspection, then confirm the result as the citizen. Open **پیشرفت مشارکت** to see the XP ledger, weekly challenge and mission. Open the Cara wallet separately to see its existing credit.

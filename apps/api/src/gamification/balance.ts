@@ -1,4 +1,4 @@
-import { forgeConfig } from '@forge/config';
+import { forgeConfig, levelIndex as findLevel } from '@forge/config';
 import type { Prisma } from '../generated/prisma/client.js';
 
 export async function pointBalance(
@@ -13,10 +13,7 @@ export async function pointBalance(
 }
 
 export function levelIndex(xp: number) {
-  return forgeConfig.gamification.levelThresholds.reduce(
-    (level, threshold, index) => (threshold <= xp ? index : level),
-    0,
-  );
+  return findLevel(xp, forgeConfig.gamification.levelThresholds);
 }
 
 export function rewardDiscount(level: number) {

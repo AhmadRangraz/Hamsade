@@ -1,4 +1,4 @@
-import { forgeConfig } from '@forge/config';
+import { advanceMission, forgeConfig } from '@forge/config';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { BusinessEvent } from './award.js';
 
@@ -28,20 +28,16 @@ export async function recordMissionProgress(
   const key = { accountId, missionKey: mission.key };
   const where = { accountId_missionKey: key };
   const previous = await tx.missionProgress.findUnique({ where });
-  const position = previous?.completedSteps ?? 0;
-  const step = mission.steps[position];
-  if (previous?.completedAt || step?.event !== kind) return;
-
-  const count = (previous?.stepCount ?? 0) + 1;
-  const stepCompleted = count >= step.target;
-  const completedSteps = stepCompleted ? position + 1 : position;
-  const completedAt =
-    completedSteps === mission.steps.length ? createdAt : null;
-  const progress = {
-    completedSteps,
-    stepCount: stepCompleted ? 0 : count,
-    completedAt,
+  if (previous?.completedAt) return;
+  const position = {
+    completedSteps: previous?.completedSteps ?? 0,
+    stepCount: previous?.stepCount ?? 0,
   };
+  const next = advanceMission(mission.steps, position, kind);
+  if (next === position) return;
+  const completedAt =
+    next.completedSteps === mission.steps.length ? createdAt : null;
+  const progress = { ...next, completedAt };
   const { id } = await tx.missionProgress.upsert({
     where,
     create: { ...key, ...progress },

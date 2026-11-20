@@ -19,3 +19,5 @@
 ## Hamsade municipal demo
 
 The municipality is implemented in the Hamsade checkout using the FORGE baseline. [Municipal milestones, demo and observed verification](MUNICIPALITY.md) cover its separate mock workflow and the remaining production work.
+
+The [citizen progression extension](MUNICIPALITY.md#citizen-progression-from-forge) shares FORGE rules across the original API and Hamsade's local demo. Production persistence and real-neighbor rankings are future work.

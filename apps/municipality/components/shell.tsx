@@ -26,6 +26,7 @@ import {
   Settings,
   ShoppingBag,
   Store,
+  Trophy,
   UsersRound,
   Wallet,
   X,
@@ -68,12 +69,14 @@ import {
 import { CaseList, CasePage, SubmitCase } from './civic';
 import { Audit, Products, Scoring, Shop, WalletPage } from './economy';
 import { Community, Courses, Training } from './participation';
+import { ProgressPage, ProgressSummary } from './progression';
 
 const icons: Record<Section, LucideIcon> = {
   home: LayoutDashboard,
   cases: ClipboardList,
   submit: FilePlus2,
   wallet: Wallet,
+  progress: Trophy,
   shop: ShoppingBag,
   training: BookOpen,
   community: UsersRound,
@@ -625,6 +628,7 @@ function Dashboard({ user }: { user: User }) {
           </div>
         </Card>
       </div>
+      {user.role === 'citizen' && <ProgressSummary />}
       <div className="dashboard-grid">
         <Card>
           <div className="section-head">
@@ -958,6 +962,8 @@ function Workspace({
       return <SubmitCase />;
     case 'wallet':
       return <WalletPage user={user} />;
+    case 'progress':
+      return <ProgressPage />;
     case 'shop':
       return <Shop />;
     case 'products':

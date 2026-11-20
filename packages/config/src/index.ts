@@ -16,3 +16,14 @@ export {
   templateRegistry,
 } from './templates';
 export type { FeatureId, TemplateId } from './templates';
+
+export {
+  advanceMission,
+  badgeProgress,
+  levelIndex,
+  localDay,
+  periodStart,
+  questOccurrence,
+  shiftDay,
+  streaks,
+} from './progression';

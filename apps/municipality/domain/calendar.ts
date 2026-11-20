@@ -1,3 +1,4 @@
+import { localDay } from '@forge/shared';
 import { isValidJalaaliDate, toGregorian, toJalaali } from 'jalaali-js';
 
 export const digits = (value: string) =>
@@ -6,12 +7,7 @@ export const digits = (value: string) =>
   );
 
 export const tehranDay = (value: string) =>
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Tehran',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(value));
+  localDay(new Date(value), 'Asia/Tehran');
 
 export function parseJalali(value: string) {
   const match = /^(13\d\d|14\d\d)\/(\d{1,2})\/(\d{1,2})$/.exec(

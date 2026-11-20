@@ -5,6 +5,7 @@ export const routes = {
   cases: 'گزارش‌ها و پیشنهادها',
   submit: 'ثبت گزارش یا پیشنهاد',
   wallet: 'کیف پول کارا',
+  progress: 'پیشرفت مشارکت',
   shop: 'فروشگاه شهری',
   training: 'آموزش شهروندی',
   community: 'مشارکت محله',
@@ -29,7 +30,7 @@ const common: Section[] = [
   'search',
 ];
 const workspaces: Record<Role, Section[]> = {
-  citizen: ['cases', 'submit', 'shop', 'training', 'community'],
+  citizen: ['cases', 'submit', 'progress', 'shop', 'training', 'community'],
   inspector: ['inspection', 'cases'],
   district: ['cases', 'scoring', 'execution', 'products'],
   hq: ['cases', 'scoring', 'audit'],

@@ -125,6 +125,21 @@ export type Attendance = {
   approved: boolean;
   passed: boolean;
 };
+export type CivicActivity =
+  | 'reportValidated'
+  | 'ideaApproved'
+  | 'caseVoted'
+  | 'qualityConfirmed'
+  | 'courseCompleted'
+  | 'surveyAnswered';
+export type ProgressEntry = {
+  citizen: Role;
+  event: CivicActivity | 'weeklyQuest' | 'civicMission';
+  source: string;
+  xp: number;
+  at: string;
+  day: string;
+};
 export type State = {
   cases: CivicCase[];
   revisions: Revision[];
@@ -140,5 +155,6 @@ export type State = {
   imports: string[];
   disabled: Role[];
   blocked?: Partial<Record<Role, Permission[]>>;
+  progression?: { entries: ProgressEntry[]; rankingOptIn: boolean };
   survey?: { answer: string; at: string };
 };

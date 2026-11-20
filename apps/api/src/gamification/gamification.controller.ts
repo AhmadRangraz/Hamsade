@@ -1,4 +1,4 @@
-import { forgeConfig, rewardEvents } from '@forge/config';
+import { badgeProgress, forgeConfig, rewardEvents } from '@forge/config';
 import { Controller, Get, Header, Req, UseGuards } from '@nestjs/common';
 import {
   ApiCookieAuth,
@@ -270,17 +270,7 @@ export class GamificationController {
     const completedSteps = missionProgress?.completedSteps ?? 0;
     const thresholds = forgeConfig.gamification.levelThresholds;
     const index = levelIndex(xp);
-    const unlockedBadges = new Set<string>();
-    const badges = forgeConfig.gamification.badges.map(
-      ({ requires, ...badge }) => {
-        const current = badge.category === 'xp' ? xp : count;
-        const unlocked =
-          current >= badge.target &&
-          (!requires || unlockedBadges.has(requires));
-        if (unlocked) unlockedBadges.add(badge.key);
-        return { ...badge, current, unlocked };
-      },
-    );
+    const badges = badgeProgress(forgeConfig.gamification.badges, xp, count);
     const achievements: AchievementResponse[] = [];
     const { awardCount, xpMilestone } = forgeConfig.gamification.achievements;
     if (awardCount !== null)

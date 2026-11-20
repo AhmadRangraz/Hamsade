@@ -8,6 +8,7 @@ import {
 import { jalaliMonth } from './calendar';
 import { districtName, districts, statusLabel, users } from './data';
 import { gisLocations, municipalAdapters } from './integrations';
+import { recordActivity, setRankingConsent } from './progression';
 import type {
   Attachment,
   CivicCase,
@@ -76,6 +77,7 @@ export type Command =
   | { type: 'permission'; role: Role; action?: Permission }
   | { type: 'fraud'; id: string }
   | { type: 'survey'; answer: string }
+  | { type: 'rankingConsent'; optIn: boolean }
   | {
       type: 'integration';
       source: keyof typeof municipalAdapters;
@@ -207,7 +209,10 @@ function applyCase(
       return fail(state);
     if (action === 'confirm') {
       if (record.status !== 'approved' || record.confirmed) return fail(state);
-      return update({ ...record, confirmed: true });
+      return update(
+        { ...record, confirmed: true },
+        recordActivity(state, user.id, 'qualityConfirmed', record.id, now),
+      );
     }
     if (record.owner === user.id)
       return fail(state, 'مشارکت در پروندهٔ دیگر شهروندان فعال است.');
@@ -220,7 +225,20 @@ function applyCase(
         );
       return update(
         { ...record, votes: [...record.votes, user.id] },
-        recordMove(state, user.id, 'vote:' + record.id, 2, 'مشارکت محله', now),
+        recordActivity(
+          recordMove(
+            state,
+            user.id,
+            'vote:' + record.id,
+            2,
+            'مشارکت محله',
+            now,
+          ),
+          user.id,
+          'caseVoted',
+          record.id,
+          now,
+        ),
       );
     }
     return note.length >= 4
@@ -258,7 +276,7 @@ function applyCase(
         state.revisions.find((item) => item.district === record.district) ??
         state.revisions.find((item) => item.district === 'city')!;
       next.score = { revision, values: cmd.values };
-      if (record.kind === 'report')
+      if (record.kind === 'report') {
         ledger = recordMove(
           state,
           record.owner,
@@ -267,6 +285,14 @@ function applyCase(
           'اعتبار گزارش معتبر',
           now,
         );
+        ledger = recordActivity(
+          ledger,
+          record.owner,
+          'reportValidated',
+          record.id,
+          now,
+        );
+      }
     }
     if (action === 'assign') {
       const p = cmd.project;
@@ -329,7 +355,7 @@ function applyCase(
       return fail(state, 'تاریخ، محل، چک‌لیست و امتیاز بازرسی را بررسی کنید.');
     next.inspections = [...record.inspections, inspection];
     if (action === 'approve') {
-      if (record.kind === 'idea')
+      if (record.kind === 'idea') {
         ledger = recordMove(
           state,
           record.owner,
@@ -338,6 +364,14 @@ function applyCase(
           'پاداش پیشنهاد اجراشده',
           now,
         );
+        ledger = recordActivity(
+          ledger,
+          record.owner,
+          'ideaApproved',
+          record.id,
+          now,
+        );
+      }
       if (record.project.worker === 'contractor')
         ledger = recordMove(
           ledger,
@@ -671,8 +705,18 @@ export function execute(
           );
         }
       }
+      const progress =
+        row.approved && row.passed && !(current.approved && current.passed)
+          ? recordActivity(
+              state,
+              participant,
+              'courseCompleted',
+              course.id,
+              now,
+            )
+          : state;
       return pass({
-        ...state,
+        ...progress,
         attendance: [
           row,
           ...state.attendance.filter(
@@ -730,6 +774,10 @@ export function execute(
             ),
           })
         : fail(state);
+    case 'rankingConsent':
+      return user.role === 'citizen' && typeof cmd.optIn === 'boolean'
+        ? pass(setRankingConsent(state, cmd.optIn))
+        : fail(state);
     case 'survey': {
       if (
         user.role !== 'citizen' ||
@@ -739,12 +787,18 @@ export function execute(
       return state.ledger.some((row) => row.key === 'survey:citizen')
         ? repeated(state, 'survey:citizen', 'پاسخ چندباره به نظرسنجی')
         : pass(
-            recordMove(
-              { ...state, survey: { answer: cmd.answer, at: now } },
+            recordActivity(
+              recordMove(
+                { ...state, survey: { answer: cmd.answer, at: now } },
+                user.id,
+                'survey:citizen',
+                5,
+                'مشارکت در نظرسنجی',
+                now,
+              ),
               user.id,
-              'survey:citizen',
-              5,
-              'مشارکت در نظرسنجی',
+              'surveyAnswered',
+              'neighborhood-v1',
               now,
             ),
           );

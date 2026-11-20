@@ -102,3 +102,20 @@ For a launch, replace the persona picker with verified identity and server-enfor
 - Municipal lint, formatting, type checking, and the production build passed. Nine domain tests exercised permissions, district isolation, immutable scoring revisions, rework, Jalali boundaries, mixed checkout, monthly caps, payout deduplication, and mock sync retries.
 - Five Chromium tests covered the report lifecycle across four personas, keyboard and viewport checks, mixed settlement, QR attendance and payout, and HQ permissions. Axe found no violations on the tested wallet view. The HQ browser check observed no backend or external HTTP requests.
 - The copied FORGE unit suite passed all 15 tests. The legacy NestJS/PostgreSQL deployment is outside the municipal demo verification.
+
+## Citizen progression from FORGE
+
+The citizen dashboard links to **پیشرفت مشارکت**. The shared FORGE progression code in `packages/config/src/progression.ts` supplies level thresholds, ordered mission steps, badge prerequisites, streaks and Saturday-based weeks. The original FORGE API and the Hamsade demo both use these rules. Hamsade applies them to its own civic actions through a browser-local adapter.
+
+| Qualifying action                                              | Experience points |
+| -------------------------------------------------------------- | ----------------: |
+| District validates a citizen report                            |                25 |
+| Inspector approves execution of a citizen idea                 |                35 |
+| Citizen votes on an eligible case                              |                 5 |
+| Citizen confirms the quality of approved work                  |                10 |
+| Citizen passes the quiz and the instructor approves attendance |                20 |
+| Citizen answers the neighborhood survey                        |                10 |
+
+Two qualifying actions in one Tehran week award a 15-XP bonus once per week. The report-to-result mission awards 25 XP once after the citizen confirms the outcome of a report that earned validation XP. A source can earn its base XP once per event kind. XP tracks participation. Cara continues to cover purchases and simulated financial transactions. Buying or reloading Cara earns zero XP.
+
+Existing browser records and Cara balances are kept. Progress accrues from qualifying actions after this update. The sample leaderboard uses fictional peers and displays the citizen's own row only with local opt-in. No scores are shared with other browsers.
