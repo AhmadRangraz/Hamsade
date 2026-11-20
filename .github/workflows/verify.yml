@@ -1,0 +1,98 @@
+name: Verify Forge
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm forge:lint && pnpm forge:format:check && pnpm forge:typecheck && pnpm forge:test && pnpm contract:check
+
+  generated:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset:
+          [
+            saas,
+            marketplace,
+            booking,
+            community,
+            learning,
+            ai,
+            individual,
+            native-pwa,
+          ]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: forge
+          POSTGRES_PASSWORD: forge_local_only
+          POSTGRES_DB: forge
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://forge:forge_local_only@127.0.0.1:5432/forge
+      PRESET: ${{ matrix.preset }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Generate an isolated checkout
+        run: |
+          template="$PRESET"
+          case "$PRESET" in
+            individual) template=marketplace ;;
+            native-pwa) template=saas ;;
+          esac
+          pnpm forge init "$RUNNER_TEMP/forge-$PRESET" --template "$template"
+      - name: Verify generated project
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+        run: |
+          cd "$RUNNER_TEMP/forge-$PRESET"
+          pnpm install --frozen-lockfile
+          case "$PRESET" in
+            marketplace|community|learning) node tooling/configure-verification.mjs "$PWD" ;;
+            individual) node tooling/configure-verification.mjs "$PWD" individual ;;
+          esac
+          pnpm db:migrate
+          pnpm contract:check
+          pnpm forge seed
+          pnpm forge:build
+          pnpm exec playwright install --with-deps chromium
+          case "$PRESET" in
+            saas|marketplace) pnpm forge:test:e2e --workers=1 --retries=1 --reporter=list,html ;;
+            individual) pnpm forge:test:e2e tests/engagement.spec.ts tests/gamification.spec.ts --workers=1 --retries=1 --reporter=list,html ;;
+            native-pwa)
+              FORGE_E2E_HEADED_INSTALL=1 xvfb-run -a pnpm forge:test:e2e tests/pwa.spec.ts --grep 'disposable profile' --reporter=list,html
+              ;;
+            *) pnpm forge:test:e2e tests/presets.spec.ts --retries=1 --reporter=list,html ;;
+          esac
+      - name: Retain browser results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-results-${{ matrix.preset }}
+          path: ${{ runner.temp }}/forge-${{ matrix.preset }}/playwright-report
+          retention-days: 14
+          if-no-files-found: ignore

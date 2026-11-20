@@ -1,0 +1,52 @@
+{
+  "name": "hamsade",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "setup": "node tooling/setup.mjs",
+    "dev": "pnpm build:shared && pnpm --filter @forge/municipality dev",
+    "build": "pnpm build:shared && pnpm --filter @forge/municipality build",
+    "typecheck": "pnpm build:shared && pnpm --filter @forge/municipality typecheck",
+    "lint": "eslint apps/municipality",
+    "format": "prettier --write .",
+    "format:check": "prettier --check apps/municipality docs",
+    "test": "vitest run --config vitest.municipality.config.mjs",
+    "test:e2e": "playwright test --config playwright.municipality.config.ts",
+    "db:up": "docker compose up -d --wait db",
+    "db:migrate": "pnpm --filter @forge/api db:migrate",
+    "db:backup": "node tooling/db-recovery.mjs backup",
+    "db:restore-verify": "node tooling/db-recovery.mjs restore-verify",
+    "ops:smoke": "node tooling/deployment-smoke.mjs",
+    "contract:generate": "turbo run build --filter=@forge/api && node tooling/contract.mjs",
+    "contract:check": "turbo run build --filter=@forge/api && node tooling/contract.mjs --check",
+    "forge": "node tooling/forge.mts",
+    "start": "pnpm --filter @forge/municipality start",
+    "build:shared": "pnpm -r --filter @forge/shared... build",
+    "forge:dev": "turbo run dev --filter=!@forge/municipality",
+    "forge:build": "turbo run build --filter=!@forge/municipality",
+    "forge:typecheck": "turbo run typecheck --filter=!@forge/municipality && tsc -p tooling/tsconfig.json",
+    "forge:lint": "eslint .",
+    "forge:test": "turbo run build --filter=@forge/config && vitest run",
+    "forge:test:e2e": "playwright test --config playwright.config.ts",
+    "forge:format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@eslint/js": "10.0.1",
+    "@next/eslint-plugin-next": "16.4.6",
+    "@playwright/test": "1.65.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.15.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "openapi-typescript": "7.13.0",
+    "prettier": "3.10.1",
+    "turbo": "2.11.11",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.73.0",
+    "vitest": "5.1.1"
+  }
+}

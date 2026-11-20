@@ -1,0 +1,21 @@
+# Roadmap
+
+| Milestone | Status   | Depends on | Scope and acceptance                                                                                                                                                                                                                               |
+| --------- | -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M0        | VERIFIED | —          | Architecture, configuration specification, technology decisions, repository rules, and resumable handoff. Review these documents against the actual workspace.                                                                                     |
+| M1        | VERIFIED | M0         | Installable workspace, strict apps and packages, PostgreSQL and checked-in initial Prisma migration, OpenAPI client, lint, unit and API integration tests. Start both apps, query the API through the frontend, and validate the production build. |
+| M2        | VERIFIED | M1         | Verify accounts, registration, login, cookie sessions, permissions, profiles, account verification and recovery, and sensitive-action audit trails with integration tests.                                                                         |
+| M3        | VERIFIED | M2         | Complete RTL design system, three selectable themes, auth and admin screens, CRUD, responsive navigation, and browser accessibility checks.                                                                                                        |
+| M4        | VERIFIED | M3         | Config-driven TypeScript CLI, initialization, SaaS and a second working preset, demo data, and generation tests.                                                                                                                                   |
+| M5        | VERIFIED | M4         | Configured manifest and icons, native install, launch and uninstall on the hosted runner, service worker updates and offline fallback, and safe caching.                                                                                           |
+| M6        | VERIFIED | M2, M5     | Transactional event engine, points, levels, badges, streaks, rankings, API and widgets. Verified idempotency, concurrency, and abuse protections against PostgreSQL.                                                                               |
+| M7        | VERIFIED | M6         | Quests, missions, individual and group challenges, a local reward economy, seasons, referrals, engagement, gamification administration, and analytics. Both challenge modes and ledger integrity verified against PostgreSQL.                      |
+| M8        | VERIFIED | M4–M7      | Six clean generated templates verified locally, including seeded workflows, CI-equivalent checks, accessibility, security, lab timings and production startup.                                                                                     |
+| M9        | VERIFIED | M8         | All nine hosted jobs passed. Verify source quality, the six generated presets, the individual challenge variant, and native PWA installation. Retain browser reports.                                                                              |
+| M10       | VERIFIED | M9         | Check a deployment through its public web origin. Back up a migrated Compose database and rehearse restoring it to a disposable database. Verify that failed and repeated operations preserve existing backups.                                    |
+
+[Local verification](TESTING.md#observed-local-verification) · [Hosted release verification](TESTING.md#release-verification) · [State](../.ai/STATE.md)
+
+## Hamsade municipal demo
+
+The municipality is implemented in the Hamsade checkout using the FORGE baseline. [Municipal milestones, demo and observed verification](MUNICIPALITY.md) cover its separate mock workflow and the remaining production work.

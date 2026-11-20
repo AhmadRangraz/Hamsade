@@ -1,0 +1,178 @@
+{
+  "districts": [
+    { "id": "north", "name": "منطقه ۱ · بهارستان" },
+    { "id": "south", "name": "منطقه ۲ · نارون" }
+  ],
+  "users": [
+    {
+      "id": "citizen",
+      "role": "citizen",
+      "name": "سارا احمدی",
+      "district": "north"
+    },
+    {
+      "id": "inspector",
+      "role": "inspector",
+      "name": "نیما رضایی",
+      "district": "north"
+    },
+    {
+      "id": "district",
+      "role": "district",
+      "name": "مریم کریمی",
+      "district": "north"
+    },
+    { "id": "hq", "role": "hq", "name": "لیلا امینی", "district": "city" },
+    {
+      "id": "contractor",
+      "role": "contractor",
+      "name": "آرمان نوری",
+      "district": "north"
+    },
+    {
+      "id": "vendor",
+      "role": "vendor",
+      "name": "ناهید صادقی",
+      "district": "north"
+    },
+    {
+      "id": "instructor",
+      "role": "instructor",
+      "name": "پریسا بهرامی",
+      "district": "north"
+    }
+  ],
+  "categories": ["معابر و پیاده‌رو", "روشنایی", "فضای سبز", "پسماند", "ایمنی"],
+  "locations": {
+    "north": ["میدان سرو", "خیابان آبان", "بوستان سپید"],
+    "south": ["میدان نارون", "کوچهٔ باران", "خانهٔ محلهٔ آفتاب"]
+  },
+  "notices": [
+    {
+      "title": "نتیجهٔ بررسی مسیر بوستان سپید",
+      "text": "بازرسی انجام شده و نتیجه برای شهروندان قابل مشاهده است."
+    },
+    { "title": "کارگاه ایمنی محله", "text": "ثبت حضور در بخش آموزش باز است." }
+  ],
+  "events": [
+    {
+      "name": "پاکسازی داوطلبانهٔ محله",
+      "date": "2026-11-25",
+      "venue": "بوستان سپید"
+    },
+    {
+      "name": "گردهمایی همسایه‌ها",
+      "date": "2026-12-03",
+      "venue": "خانهٔ محلهٔ آفتاب"
+    }
+  ],
+  "products": [
+    {
+      "id": "parking",
+      "name": "کوپن پارکینگ عمومی",
+      "kind": "digital",
+      "icon": "parking",
+      "price": 40000,
+      "stock": 12,
+      "vendor": "vendor",
+      "district": "north"
+    },
+    {
+      "id": "traffic",
+      "name": "مجوز طرح ترافیک",
+      "kind": "digital",
+      "icon": "ticket",
+      "price": 85000,
+      "stock": 10,
+      "vendor": "vendor",
+      "district": "north"
+    },
+    {
+      "id": "fire",
+      "name": "شارژ کپسول آتش‌نشانی",
+      "kind": "digital",
+      "icon": "shield",
+      "price": 70000,
+      "stock": 8,
+      "vendor": "vendor",
+      "district": "north"
+    },
+    {
+      "id": "topup",
+      "name": "شارژ ۲۰ کارا · آزمایشی",
+      "kind": "digital",
+      "icon": "wallet",
+      "price": 20000,
+      "stock": 20,
+      "vendor": "vendor",
+      "district": "north",
+      "topup": 20
+    },
+    {
+      "id": "ticket",
+      "name": "بلیت خانهٔ فرهنگ",
+      "kind": "digital",
+      "icon": "ticket",
+      "price": 30000,
+      "stock": 18,
+      "vendor": "vendor",
+      "district": "north"
+    },
+    {
+      "id": "pass",
+      "name": "اشتراک کتابخانهٔ محله",
+      "kind": "digital",
+      "icon": "book",
+      "price": 55000,
+      "stock": 15,
+      "vendor": "vendor",
+      "district": "south"
+    },
+    {
+      "id": "safety",
+      "name": "بستهٔ ایمنی منزل",
+      "kind": "physical",
+      "icon": "shield",
+      "price": 125000,
+      "stock": 7,
+      "vendor": "vendor",
+      "district": "north"
+    },
+    {
+      "id": "tree",
+      "name": "نهال انار",
+      "kind": "physical",
+      "icon": "leaf",
+      "price": 65000,
+      "stock": 14,
+      "vendor": "vendor",
+      "district": "south"
+    }
+  ],
+  "courses": [
+    {
+      "id": "safety",
+      "title": "ایمنی در خانه و محله",
+      "mode": "local",
+      "instructor": "instructor",
+      "district": "north",
+      "venue": "خانهٔ محلهٔ بهارستان",
+      "date": "2026-11-26",
+      "code": "1374",
+      "reward": 25,
+      "lesson": "مسیرهای خروج را باز نگه دارید. در موقعیت خطر از محل دور شوید و با خدمات امدادی تماس بگیرید."
+    },
+    {
+      "id": "waste",
+      "title": "تفکیک پسماند از خانه",
+      "mode": "online",
+      "instructor": "instructor",
+      "district": "north",
+      "venue": "آنلاین",
+      "date": "2026-11-28",
+      "code": "2486",
+      "reward": 15,
+      "lesson": "پسماند خشک و تمیز را از پسماند تر جدا کنید. شیشه و کاغذ را در ظرف‌های مخصوص بگذارید."
+    }
+  ]
+}
